@@ -64,7 +64,9 @@ You can now open the project notebooks.
 Run the notebooks in the following order:
 
 ```
-01 dataset_pneumonia_eda.ipynb
+supervised_learning/dataset_knee_osteoarthritis.ipynb
+
+unsupervised_learning/Student_Dataset_preprocessing.ipynb
 ```
 
 ---
