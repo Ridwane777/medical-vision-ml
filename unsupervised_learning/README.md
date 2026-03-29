@@ -1,100 +1,78 @@
 # Unsupervised Learning - Student Dataset Clustering
 
-Ce dossier contient un pipeline complet de regroupement (clustering) non supervisé sur des témoignages d\'étudiants. Le script principal est `unsupervised_learning.py` et il reproduit l\'ensemble du travail initialement réalisé dans le notebook `Student_Dataset_preprocessing.ipynb`.
+Ce dossier contient un pipeline complet de regroupement (clustering) non supervisé sur des témoignages d'étudiants. Le script principal est `unsupervised_learning.py` et il reproduit l'ensemble du travail initialement réalisé dans le notebook `Student_Dataset_preprocessing.ipynb`.
 
 ## Objectif
 
-L'objectif est de détecter des groupes thématiques dans des témoignages textuels liés à des pathologies. On passe d'une tâche de prétraitement textuel à un clustering k-means, puis à l'identification de thèmes dominants et à une visualisation t-SNE.
+L'objectif est de détecter des groupes thématiques dans des témoignages textuels liés à des pathologies. On passe d'une tâche de prétraitement textuel à un clustering K-Means, puis à l'identification de thèmes dominants et à une visualisation t-SNE.
 
 ## Structure du workflow
 
-### 1. Chargement et nettoyage des données (`load_and_clean`)
-- Lecture du CSV `../Student_Dataset.csv` (en tête non standard, îl peut contenir des lignes mal formatées).
-- Correction des lignes où la colonne `Code` ne correspond pas à un code `0x...` (cas décalés où le texte est dans `Code`).
-- Suppression des lignes sans témoignage et suppression des doublons (mêmes textes).
-- Remplacement des valeurs manquantes `Code` par `0x000000`.
+### 1. Chargement et nettoyage des données
+- Lecture initiale du CSV `../Student_Dataset.csv` pour un premier aperçu.
+- Rechargement en forçant 3 colonnes (`ID`, `Code`, `Testimonies`) avec `on_bad_lines='skip'` pour ignorer les lignes corrompues.
+- Correction des lignes décalées : si `Code` ne contient pas `0x`, la valeur est déplacée dans `Testimonies` et `Code` est fixé à `0x000000`.
+- Suppression des lignes sans témoignage (`dropna`) et des doublons textuels exacts (`drop_duplicates`).
+- Remplissage des codes manquants restants par `0x000000`.
 
 ### 2. Prétraitement textuel (`clean_text`)
+- Retourne `0x000000` si l'entrée n'est pas une chaîne valide ou est vide.
 - Passage en minuscules.
-- Suppression de tout caractère non alphabétique (chiffres, ponctuation). 
-- Tokenization avec NLTK (`word_tokenize`).
-- Suppression des stopwords anglais (liste NLTK `stopwords`).
-- Lemmatisation avec `WordNetLemmatizer` (réduit les mots à leur racine).
-- Si le texte devient vide, remplacement par le placeholder `0x000000`.
+- Suppression de tout caractère non alphabétique via `re.sub(r'[^a-z\s]', ' ', text)`.
+- Normalisation des espaces multiples.
+- Tokenisation par `split()` et suppression des stop words anglais via la liste `ENGLISH_STOP_WORDS` de sklearn.
+- Si le texte résultant est vide, remplacement par `0x000000`.
+- Sauvegarde du dataset nettoyé dans `Student_Dataset_Cleaned.csv`.
 
 ### 2.a Définitions (NLP de base)
-- `Tokenisation` : Processus de segmentation d'un flux textuel en unités minimales de sens appelées tokens (mots, caractères ou sous-mots). C'est l'étape de structuration indispensable qui transforme une chaîne de caractères brute en une séquence exploitable par un algorithme.
-- `Lemmatisation` : Analyse morphosyntaxique visant à ramener un mot à sa forme de dictionnaire, appelée lemme (infinitif pour les verbes, masculin singulier pour les adjectifs/noms). Contrairement au stemming, elle s'appuie sur un dictionnaire et préserve la catégorie grammaticale, garantissant que le résultat est un mot existant et porteur de sens.
+- `Tokenisation` : Processus de segmentation d'un flux textuel en unités minimales de sens appelées tokens (mots). C'est l'étape de structuration indispensable qui transforme une chaîne de caractères brute en une séquence exploitable par un algorithme.
+- `Stop words` : Mots très fréquents et sans valeur informative (ex: "the", "is", "and") que l'on retire pour ne conserver que les termes porteurs de sens.
 
 ### 2.b Pourquoi ces étapes ?
-- Suppression de la casse/ponctuation pour normaliser le texte.
-- Retrait des stopwords pour ne pas faire pondérer des mots sans valeur informative.
-- Lemmatisation pour regrouper des mots appartenant au même concept (run/running, patient/patients).
+- Suppression de la casse et de la ponctuation pour normaliser le texte.
+- Retrait des stop words pour ne pas faire pondérer des mots sans valeur informative.
 
-### 3. Vectorisation (`vectorize_data`)
+### 3. Vectorisation
 - TF-IDF avec `TfidfVectorizer(max_df=0.8, min_df=2, stop_words='english')` :
-  - max_df = enlève les mots très fréquents (bruit), min_df = enlève les mots trop rares.
-- Réduction de dimension par `TruncatedSVD` à 100 composantes pour capter signal principal et réduire le bruit.
-- Normalisation L2 avec `normalize(..., norm='l2')` pour rendre les distances cohérentes (recommandé pour la similitude cosinus).
-
-Le TF-IDF crée la carte d'identité du texte, la TruncatedSVD en simplifie la lecture en regroupant les concepts proches, et la Normalisation L2 remet tous les documents sur un pied d'égalité pour la comparaison.
+  - `max_df=0.8` : ignore les mots présents dans plus de 80% des documents (trop communs).
+  - `min_df=2` : ignore les mots présents dans moins de 2 documents (trop rares).
+- Visualisation des 10 mots avec le poids TF-IDF moyen le plus élevé et le plus faible (graphiques côte à côte).
+- Réduction de dimension par `TruncatedSVD` à 100 composantes (~30% de variance expliquée).
+- Normalisation L2 avec `normalize(..., norm='l2')` pour rendre les distances cohérentes (similitude cosinus implicite).
 
 ### 3.a Définitions techniques
-- `TF-IDF (Term Frequency-Inverse Document Frequency)` : Méthode de pondération statistique qui évalue l'importance d'un mot au sein d'un document relativement à un corpus complet. Elle multiplie la fréquence locale (TF) par la rareté globale (IDF), permettant ainsi de filtrer les "mots outils" (le, la, de) au profit des termes porteurs de sens et discriminants.
+- `TF-IDF (Term Frequency-Inverse Document Frequency)` : Méthode de pondération statistique qui évalue l'importance d'un mot au sein d'un document relativement à un corpus complet. Elle multiplie la fréquence locale (TF) par la rareté globale (IDF), permettant ainsi de filtrer les mots trop communs au profit des termes discriminants.
 
-- `TruncatedSVD (Singular Value Decomposition)` : Technique de réduction de dimension linéaire optimisée pour les matrices creuses (type TF-IDF). Elle projette les données dans un espace latent de dimension réduite en ne conservant que les composantes les plus significatives. Dans le cadre du NLP, on appelle souvent cette approche LSA (Latent Semantic Analysis) car elle permet de capturer des relations sémantiques entre les mots.
+- `TruncatedSVD (Singular Value Decomposition)` : Technique de réduction de dimension linéaire optimisée pour les matrices creuses (type TF-IDF). Elle projette les données dans un espace latent de dimension réduite en ne conservant que les composantes les plus significatives. Dans le cadre du NLP, on appelle souvent cette approche LSA (Latent Semantic Analysis).
 
-- `Normalisation L2 (Euclidienne)` : Transformation vectorielle consistant à diviser chaque composante d'un vecteur par sa norme euclidienne, ramenant sa longueur totale à 1. En recherche d'information, elle garantit que la comparaison entre deux documents (souvent via la similarité cosinus) repose sur la thématique et non sur la longueur brute du texte. 
+- `Normalisation L2 (Euclidienne)` : Transformation vectorielle consistant à diviser chaque composante d'un vecteur par sa norme euclidienne, ramenant sa longueur totale à 1. Elle garantit que la comparaison entre deux documents repose sur la thématique et non sur la longueur brute du texte.
 
-- `Silhouette_score` : C'est une métrique qui permet d'évaluer la qualité d'un partitionnement (clustering) en mesurant si chaque point est bien à sa place.
+- `Silhouette Score` : Métrique qui permet d'évaluer la qualité d'un partitionnement en mesurant si chaque point est bien à sa place dans son cluster (cohésion interne vs séparation externe). Un score plus élevé indique un meilleur clustering.
 
-### 4. Sélection du nombre de clusters (`choose_k` et `plot_k_selection`)
-- Boucle k=2..15 sur K-means (`n_init=10`, `random_state=42`).
-- Méthodes:
-  - Inertie (elbow/knee method) : recherche un coude dans la courbe d\'inertie.
-  - Score silhouette : évalue la cohésion et séparation des clusters.
-- Visualisation en deux graphiques côte à côte.
+### 4. Sélection du nombre de clusters
+- Boucle k=2..15 sur K-Means (`n_init=10`, `random_state=42`).
+- Deux méthodes complémentaires :
+  - **Inertie (elbow/knee method)** : recherche un coude dans la courbe d'inertie.
+  - **Score silhouette** : évalue la cohésion et la séparation des clusters.
+- Visualisation des deux courbes côte à côte.
 
-### 5. K-means final et thème des clusters (`kmeans_and_report`)
-- K-means final choisi avec k=7 (selon analyse elbow/silhouette).
-- Étiquette `Cluster_Predit` pour chaque ligne.
-- Mesure finale : score silhouette sur le clustering.
-- Pour chaque cluster, recherche des 5 mots TF-IDF moyens les plus hauts pour identifier un thème.
+### 5. K-Means final (k=14)
+- Après analyse des deux courbes sur k=2..15, **k=14** est retenu comme offrant le meilleur équilibre entre compacité et séparation.
+- Chaque témoignage reçoit une étiquette `Cluster_Predit`.
+- Calcul du score silhouette final sur le modèle retenu.
+- Pour chaque cluster : calcul de la moyenne des scores TF-IDF et extraction des **5 mots les plus représentatifs**.
 
-### 6. Visualisation (`tsne_visualization`)
+### 6. Visualisation t-SNE
 - Réduction en 2D avec `TSNE(n_components=2, perplexity=30, max_iter=1000, random_state=42)`.
-- Scatter plot coloré selon cluster.
-
-### 7. Export de résultats
-- Fichier `Student_Dataset_Clustered.csv` contenant `ID`, `Code`, `Testimonies`, `Cluster_Predit`.
-
-## Thèmes identifiés (exemple)
-
-D'après l'exécution actuelle, les clusters reflètent approximativement :
-- Cluster 0 : symptômes dermatologiques (peau, brûlure, rougeur)
-- Cluster 1 : douleurs, oreilles, maux de tête
-- Cluster 2 : poitrine, respiration, toux
-- Cluster 3 : démangeaisons, éruption, allergie
-- Cluster 4 : sang, médecin, soif, perte de poids
-- Cluster 5 : douleurs générales (courbatures, sensation de malaise)
-- Cluster 6 : gorge/nasal, toux légère
-
-> Renote que ces thèmes sont suggérés par les mots les plus forts TF-IDF, ce n'est pas une étiquette médicale certifiée.
-
-## Cas d'utilisation
-
-- Analyse exploratoire de corpus de récits/patients.
-- Classification préliminaire et regroupement de types de symptômes.
-- Aide à la segmentation des témoignages pour un travail médical/épidémiologique.
-- Création de rapports thématiques par regroupement documentaire.
+- Scatter plot coloré par cluster avec palette `tab20` (14 couleurs distinctes) et barre de couleur numérotée de 0 à 13.
 
 ## Librairies utilisées
 
-- `pandas` : manipulation de tables
+- `pandas` : manipulation de données tabulaires
 - `numpy` : calculs numériques
 - `matplotlib` : visualisation
-- `nltk` : prétraitement textuel (tokenization, stopwords, lemmatisation)
-- `scikit-learn` : TF-IDF, SVD, normalization, KMeans, silhouette_score, TSNE
+- `re` : expressions régulières pour le nettoyage textuel
+- `scikit-learn` : TF-IDF, stop words, SVD, normalisation, KMeans, silhouette score, t-SNE
 
 ## Exécution
 
@@ -106,14 +84,14 @@ D'après l'exécution actuelle, les clusters reflètent approximativement :
    ```bash
    python unsupervised_learning/unsupervised_learning.py
    ```
-3. Vérifie `Student_Dataset_Clustered.csv` et les graphiques.
+3. Vérifie `Student_Dataset_Cleaned.csv` et les graphiques.
 
 ## Conseils pour la revue de code
 
-- Explique clairement pourquoi on clean au niveau du dataset (`0x000000`, mauvais alignement colonnes, suppression des doublons).
-- Montre que la vectorisation TF-IDF est nécessaire pour transformer texte en features numériques.
-- Mentionne que SVD est utilisé pour réduire la dimensionnalité et éviter overfitting/clustering futile.
+- Explique clairement pourquoi on nettoie au niveau du dataset (`0x000000`, mauvais alignement colonnes, suppression des doublons).
+- Montre que la vectorisation TF-IDF est nécessaire pour transformer le texte en features numériques.
+- Mentionne que SVD est utilisé pour réduire la dimensionnalité et éviter un clustering peu pertinent dans un espace trop grand.
 - Présente le score silhouette comme métrique de qualité de regroupement.
-- Si besoin, propose une extension : test de `k` additionnels (7, 8, 9), ou autres algos (DBSCAN, Agglomerative) pour comparaison.
+- Si besoin, propose une extension : test d'autres algorithmes (DBSCAN, Agglomerative) pour comparaison.
 
 ---
