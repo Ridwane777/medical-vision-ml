@@ -9,7 +9,7 @@ L'objectif est de détecter des groupes thématiques dans des témoignages textu
 ## Structure du workflow
 
 ### 1. Chargement et nettoyage des données
-- Lecture initiale du CSV `../Student_Dataset.csv` pour un premier aperçu.
+- Lecture initiale du CSV `./Student_Dataset.csv` pour un premier aperçu.
 - Rechargement en forçant 3 colonnes (`ID`, `Code`, `Testimonies`) avec `on_bad_lines='skip'` pour ignorer les lignes corrompues.
 - Correction des lignes décalées : si `Code` ne contient pas `0x`, la valeur est déplacée dans `Testimonies` et `Code` est fixé à `0x000000`.
 - Suppression des lignes sans témoignage (`dropna`) et des doublons textuels exacts (`drop_duplicates`).

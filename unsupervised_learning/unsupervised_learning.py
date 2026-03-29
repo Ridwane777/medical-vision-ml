@@ -34,7 +34,7 @@ from sklearn.manifold import TSNE                         # Réduction 2D pour l
 # Chargement initial du fichier CSV pour un premier aperçu
 # Le dataset contient des irrégularités : certaines lignes ont 2 colonnes,
 # d'autres 3, avec des valeurs "0x000000" et des données manquantes.
-df = pd.read_csv('../Student_Dataset.csv')
+df = pd.read_csv('./Student_Dataset.csv')
 
 print("Aperçu des premières lignes (df.head) :")
 print(df.head())
@@ -57,7 +57,7 @@ print(df.head())
 # - names=['ID', 'Code', 'Testimonies'] : on nomme manuellement les 3 colonnes
 # - on_bad_lines='skip' : ignorer silencieusement les lignes corrompues
 df_clean = pd.read_csv(
-    '../Student_Dataset.csv',
+    './Student_Dataset.csv',
     header=None,
     names=['ID', 'Code', 'Testimonies'],
     on_bad_lines='skip'
