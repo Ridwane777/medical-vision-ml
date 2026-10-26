@@ -1,97 +1,97 @@
 # Unsupervised Learning - Student Dataset Clustering
 
-Ce dossier contient un pipeline complet de regroupement (clustering) non supervisé sur des témoignages d'étudiants. Le script principal est `unsupervised_learning.py` et il reproduit l'ensemble du travail initialement réalisé dans le notebook `Student_Dataset_preprocessing.ipynb`.
+This folder contains a complete unsupervised clustering pipeline on student testimonies. The main script is `unsupervised_learning.py`; it reproduces all the work originally done in the notebook `Student_Dataset_preprocessing.ipynb`.
 
-## Objectif
+## Objective
 
-L'objectif est de détecter des groupes thématiques dans des témoignages textuels liés à des pathologies. On passe d'une tâche de prétraitement textuel à un clustering K-Means, puis à l'identification de thèmes dominants et à une visualisation t-SNE.
+The goal is to detect thematic groups in text testimonies related to medical conditions. The pipeline goes from text preprocessing to K-Means clustering, then to identifying dominant themes and a t-SNE visualization.
 
-## Structure du workflow
+## Workflow structure
 
-### 1. Chargement et nettoyage des données
-- Lecture initiale du CSV `./Student_Dataset.csv` pour un premier aperçu.
-- Rechargement en forçant 3 colonnes (`ID`, `Code`, `Testimonies`) avec `on_bad_lines='skip'` pour ignorer les lignes corrompues.
-- Correction des lignes décalées : si `Code` ne contient pas `0x`, la valeur est déplacée dans `Testimonies` et `Code` est fixé à `0x000000`.
-- Suppression des lignes sans témoignage (`dropna`) et des doublons textuels exacts (`drop_duplicates`).
-- Remplissage des codes manquants restants par `0x000000`.
+### 1. Loading and cleaning the data
+- Initial read of the CSV `./Student_Dataset.csv` for a first overview.
+- Reload forcing 3 columns (`ID`, `Code`, `Testimonies`) with `on_bad_lines='skip'` to ignore corrupted lines.
+- Fix shifted rows: if `Code` does not contain `0x`, the value is moved to `Testimonies` and `Code` is set to `0x000000`.
+- Remove rows without a testimony (`dropna`) and exact text duplicates (`drop_duplicates`).
+- Fill remaining missing codes with `0x000000`.
 
-### 2. Prétraitement textuel (`clean_text`)
-- Retourne `0x000000` si l'entrée n'est pas une chaîne valide ou est vide.
-- Passage en minuscules.
-- Suppression de tout caractère non alphabétique via `re.sub(r'[^a-z\s]', ' ', text)`.
-- Normalisation des espaces multiples.
-- Tokenisation par `split()` et suppression des stop words anglais via la liste `ENGLISH_STOP_WORDS` de sklearn.
-- Si le texte résultant est vide, remplacement par `0x000000`.
-- Sauvegarde du dataset nettoyé dans `Student_Dataset_Cleaned.csv`.
+### 2. Text preprocessing (`clean_text`)
+- Returns `0x000000` if the input is not a valid string or is empty.
+- Lowercasing.
+- Removal of every non-alphabetic character via `re.sub(r'[^a-z\s]', ' ', text)`.
+- Normalization of multiple spaces.
+- Tokenization with `split()` and removal of English stop words using sklearn's `ENGLISH_STOP_WORDS` list.
+- If the resulting text is empty, it is replaced by `0x000000`.
+- The cleaned dataset is saved to `Student_Dataset_Cleaned.csv`.
 
-### 2.a Définitions (NLP de base)
-- `Tokenisation` : Processus de segmentation d'un flux textuel en unités minimales de sens appelées tokens (mots). C'est l'étape de structuration indispensable qui transforme une chaîne de caractères brute en une séquence exploitable par un algorithme.
-- `Stop words` : Mots très fréquents et sans valeur informative (ex: "the", "is", "and") que l'on retire pour ne conserver que les termes porteurs de sens.
+### 2.a Definitions (basic NLP)
+- `Tokenization`: splitting a text stream into minimal units of meaning called tokens (words). It is the structuring step that turns a raw character string into a sequence an algorithm can use.
+- `Stop words`: very frequent words with no informative value (e.g. "the", "is", "and") that are removed to keep only meaningful terms.
 
-### 2.b Pourquoi ces étapes ?
-- Suppression de la casse et de la ponctuation pour normaliser le texte.
-- Retrait des stop words pour ne pas faire pondérer des mots sans valeur informative.
+### 2.b Why these steps?
+- Removing case and punctuation normalizes the text.
+- Removing stop words prevents uninformative words from carrying weight.
 
-### 3. Vectorisation
-- TF-IDF avec `TfidfVectorizer(max_df=0.8, min_df=2, stop_words='english')` :
-  - `max_df=0.8` : ignore les mots présents dans plus de 80% des documents (trop communs).
-  - `min_df=2` : ignore les mots présents dans moins de 2 documents (trop rares).
-- Visualisation des 10 mots avec le poids TF-IDF moyen le plus élevé et le plus faible (graphiques côte à côte).
-- Réduction de dimension par `TruncatedSVD` à 100 composantes (~30% de variance expliquée).
-- Normalisation L2 avec `normalize(..., norm='l2')` pour rendre les distances cohérentes (similitude cosinus implicite).
+### 3. Vectorization
+- TF-IDF with `TfidfVectorizer(max_df=0.8, min_df=2, stop_words='english')`:
+  - `max_df=0.8`: ignores words present in more than 80% of documents (too common).
+  - `min_df=2`: ignores words present in fewer than 2 documents (too rare).
+- Visualization of the 10 words with the highest and the lowest mean TF-IDF weight (side-by-side charts).
+- Dimensionality reduction with `TruncatedSVD` to 100 components (~41% explained variance, 0.413 in the notebook run).
+- L2 normalization with `normalize(..., norm='l2')` to make distances consistent (implicit cosine similarity).
 
-### 3.a Définitions techniques
-- `TF-IDF (Term Frequency-Inverse Document Frequency)` : Méthode de pondération statistique qui évalue l'importance d'un mot au sein d'un document relativement à un corpus complet. Elle multiplie la fréquence locale (TF) par la rareté globale (IDF), permettant ainsi de filtrer les mots trop communs au profit des termes discriminants.
+### 3.a Technical definitions
+- `TF-IDF (Term Frequency-Inverse Document Frequency)`: statistical weighting method that measures how important a word is in a document relative to the whole corpus. It multiplies local frequency (TF) by global rarity (IDF), filtering out overly common words in favor of discriminative terms.
 
-- `TruncatedSVD (Singular Value Decomposition)` : Technique de réduction de dimension linéaire optimisée pour les matrices creuses (type TF-IDF). Elle projette les données dans un espace latent de dimension réduite en ne conservant que les composantes les plus significatives. Dans le cadre du NLP, on appelle souvent cette approche LSA (Latent Semantic Analysis).
+- `TruncatedSVD (Singular Value Decomposition)`: linear dimensionality reduction technique optimized for sparse matrices (such as TF-IDF). It projects the data into a lower-dimensional latent space, keeping only the most significant components. In NLP this approach is often called LSA (Latent Semantic Analysis).
 
-- `Normalisation L2 (Euclidienne)` : Transformation vectorielle consistant à diviser chaque composante d'un vecteur par sa norme euclidienne, ramenant sa longueur totale à 1. Elle garantit que la comparaison entre deux documents repose sur la thématique et non sur la longueur brute du texte.
+- `L2 (Euclidean) normalization`: vector transformation that divides each component by the vector's Euclidean norm, bringing its total length to 1. It ensures that comparing two documents depends on their topic, not on their raw length.
 
-- `Silhouette Score` : Métrique qui permet d'évaluer la qualité d'un partitionnement en mesurant si chaque point est bien à sa place dans son cluster (cohésion interne vs séparation externe). Un score plus élevé indique un meilleur clustering.
+- `Silhouette Score`: metric that evaluates the quality of a partition by measuring whether each point fits well in its cluster (internal cohesion vs. external separation). A higher score indicates better clustering.
 
-### 4. Sélection du nombre de clusters
-- Boucle k=2..15 sur K-Means (`n_init=10`, `random_state=42`).
-- Deux méthodes complémentaires :
-  - **Inertie (elbow/knee method)** : recherche un coude dans la courbe d'inertie.
-  - **Score silhouette** : évalue la cohésion et la séparation des clusters.
-- Visualisation des deux courbes côte à côte.
+### 4. Choosing the number of clusters
+- Loop over k=2..15 with K-Means (`n_init=10`, `random_state=42`).
+- Two complementary methods:
+  - **Inertia (elbow/knee method)**: looks for an elbow in the inertia curve.
+  - **Silhouette score**: evaluates cluster cohesion and separation.
+- Both curves are plotted side by side.
 
-### 5. K-Means final (k=14)
-- Après analyse des deux courbes sur k=2..15, **k=14** est retenu comme offrant le meilleur équilibre entre compacité et séparation.
-- Chaque témoignage reçoit une étiquette `Cluster_Predit`.
-- Calcul du score silhouette final sur le modèle retenu.
-- Pour chaque cluster : calcul de la moyenne des scores TF-IDF et extraction des **5 mots les plus représentatifs**.
+### 5. Final K-Means (k=14)
+- After analyzing both curves over k=2..15, **k=14** is kept as the best balance between compactness and separation.
+- Each testimony receives a `Cluster_Predit` label.
+- The final silhouette score is computed on the selected model.
+- For each cluster: mean TF-IDF scores are computed and the **5 most representative words** are extracted.
 
-### 6. Visualisation t-SNE
-- Réduction en 2D avec `TSNE(n_components=2, perplexity=30, max_iter=1000, random_state=42)`.
-- Scatter plot coloré par cluster avec palette `tab20` (14 couleurs distinctes) et barre de couleur numérotée de 0 à 13.
+### 6. t-SNE visualization
+- 2D reduction with `TSNE(n_components=2, perplexity=30, max_iter=1000, random_state=42)`.
+- Scatter plot colored by cluster with the `tab20` palette (14 distinct colors) and a colorbar numbered 0 to 13.
 
-## Librairies utilisées
+## Libraries used
 
-- `pandas` : manipulation de données tabulaires
-- `numpy` : calculs numériques
-- `matplotlib` : visualisation
-- `re` : expressions régulières pour le nettoyage textuel
-- `scikit-learn` : TF-IDF, stop words, SVD, normalisation, KMeans, silhouette score, t-SNE
+- `pandas`: tabular data manipulation
+- `numpy`: numerical computing
+- `matplotlib`: visualization
+- `re`: regular expressions for text cleaning
+- `scikit-learn`: TF-IDF, stop words, SVD, normalization, KMeans, silhouette score, t-SNE
 
-## Exécution
+## Running
 
-1. Active l'environnement virtuel (si nécessaire) :
+1. Activate the virtual environment (if needed):
    ```bash
    source venv/bin/activate
    ```
-2. Lance le script :
+2. Run the script:
    ```bash
    python unsupervised_learning/unsupervised_learning.py
    ```
-3. Vérifie `Student_Dataset_Cleaned.csv` et les graphiques.
+3. Check `Student_Dataset_Cleaned.csv` and the plots.
 
-## Conseils pour la revue de code
+## Code review notes
 
-- Explique clairement pourquoi on nettoie au niveau du dataset (`0x000000`, mauvais alignement colonnes, suppression des doublons).
-- Montre que la vectorisation TF-IDF est nécessaire pour transformer le texte en features numériques.
-- Mentionne que SVD est utilisé pour réduire la dimensionnalité et éviter un clustering peu pertinent dans un espace trop grand.
-- Présente le score silhouette comme métrique de qualité de regroupement.
-- Si besoin, propose une extension : test d'autres algorithmes (DBSCAN, Agglomerative) pour comparaison.
+- Explain clearly why cleaning happens at the dataset level (`0x000000`, misaligned columns, duplicate removal).
+- Show that TF-IDF vectorization is needed to turn text into numerical features.
+- Mention that SVD is used to reduce dimensionality and avoid meaningless clustering in an overly large space.
+- Present the silhouette score as the clustering quality metric.
+- If needed, suggest an extension: testing other algorithms (DBSCAN, Agglomerative) for comparison.
 
 ---

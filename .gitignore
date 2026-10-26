@@ -1,1 +1,10 @@
 venv
+# Datasets (not distributed)
+supervised_learning/Dataset_Knee_Osteoarthritis/
+supervised_learning/Dataset_Knee_Osteoarthritis_Balanced/
+legacy/dataset_pneumonia/
+dataset_pneumonia/
+**/Student_Dataset*.csv
+Student_Dataset*.csv
+*.pkl
+venv/

@@ -1,61 +1,61 @@
 # =============================================================================
 # UNSUPERVISED LEARNING - STUDENT DATASET PREPROCESSING & CLUSTERING
 # =============================================================================
-# Ce script explore un dataset CSV d'étudiants contenant des témoignages
-# liés à des pathologies. Il réalise les étapes suivantes :
-#   1. Chargement et nettoyage du dataset
-#   2. Vectorisation TF-IDF des témoignages
-#   3. Réduction de dimensionnalité (SVD)
-#   4. Clustering K-Means avec sélection du k optimal
-#   5. Visualisation des clusters avec t-SNE
+# This script explores a CSV dataset of student testimonies related to
+# medical conditions. It performs the following steps:
+#   1. Loading and cleaning the dataset
+#   2. TF-IDF vectorization of the testimonies
+#   3. Dimensionality reduction (SVD)
+#   4. K-Means clustering with selection of the optimal k
+#   5. Cluster visualization with t-SNE
 # =============================================================================
 
 # ─────────────────────────────────────────────
-# SECTION 1 : IMPORTS
+# SECTION 1: IMPORTS
 # ─────────────────────────────────────────────
 
-import pandas as pd                                       # Manipulation de données tabulaires
-import numpy as np                                        # Calculs numériques
-import matplotlib.pyplot as plt                           # Visualisations graphiques
-import re                                                 # Expressions régulières pour le nettoyage de texte
+import pandas as pd                                       # Tabular data manipulation
+import numpy as np                                        # Numerical computing
+import matplotlib.pyplot as plt                           # Plotting
+import re                                                 # Regular expressions for text cleaning
 
 from sklearn.feature_extraction.text import TfidfVectorizer, ENGLISH_STOP_WORDS
-from sklearn.preprocessing import normalize               # Normalisation L2 des vecteurs
-from sklearn.decomposition import TruncatedSVD            # Réduction de dimensionnalité (LSA)
-from sklearn.cluster import KMeans                        # Algorithme de clustering K-Means
-from sklearn.metrics import silhouette_score              # Métrique de qualité des clusters
-from sklearn.manifold import TSNE                         # Réduction 2D pour la visualisation
+from sklearn.preprocessing import normalize               # L2 normalization of vectors
+from sklearn.decomposition import TruncatedSVD            # Dimensionality reduction (LSA)
+from sklearn.cluster import KMeans                        # K-Means clustering algorithm
+from sklearn.metrics import silhouette_score              # Cluster quality metric
+from sklearn.manifold import TSNE                         # 2D reduction for visualization
 
 
 # =============================================================================
-# SECTION 2 : CHARGEMENT ET APERÇU DU DATASET BRUT
+# SECTION 2: LOADING AND OVERVIEW OF THE RAW DATASET
 # =============================================================================
 
-# Chargement initial du fichier CSV pour un premier aperçu
-# Le dataset contient des irrégularités : certaines lignes ont 2 colonnes,
-# d'autres 3, avec des valeurs "0x000000" et des données manquantes.
+# Initial load of the CSV file for a first overview
+# The dataset has irregularities: some rows have 2 columns,
+# others 3, with "0x000000" values and missing data.
 df = pd.read_csv('./Student_Dataset.csv')
 
-print("Aperçu des premières lignes (df.head) :")
+print("Preview of the first rows (df.head):")
 print(df.head())
 
 
 # =============================================================================
-# SECTION 3 : NETTOYAGE ROBUSTE DU DATASET
+# SECTION 3: ROBUST DATASET CLEANING
 # =============================================================================
-# Stratégie de nettoyage :
-#   - Corriger les lignes mal formées (colonnes décalées)
-#   - Normaliser les codes manquants en '0x000000'
-#   - Supprimer les témoignages vides et les doublons
-#   - Passer en minuscules, supprimer la ponctuation et les caractères non-alpha
-#   - Retirer les stop words anglais (via sklearn)
-#   - Remplacer les témoignages vides restants par '0x000000'
+# Cleaning strategy:
+#   - Fix malformed rows (shifted columns)
+#   - Normalize missing codes to '0x000000'
+#   - Remove empty testimonies and duplicates
+#   - Lowercase, remove punctuation and non-alphabetic characters
+#   - Remove English stop words (via sklearn)
+#   - Replace remaining empty testimonies with '0x000000'
 # ─────────────────────────────────────────────
 
-# Lecture du CSV avec gestion des lignes mal formatées
-# - header=None : pas d'en-tête dans le fichier source
-# - names=['ID', 'Code', 'Testimonies'] : on nomme manuellement les 3 colonnes
-# - on_bad_lines='skip' : ignorer silencieusement les lignes corrompues
+# Read the CSV while handling malformed rows
+# - header=None: no header in the source file
+# - names=['ID', 'Code', 'Testimonies']: name the 3 columns manually
+# - on_bad_lines='skip': silently ignore corrupted rows
 df_clean = pd.read_csv(
     './Student_Dataset.csv',
     header=None,
@@ -63,178 +63,178 @@ df_clean = pd.read_csv(
     on_bad_lines='skip'
 )
 
-# ── Correction des lignes décalées ──────────────────────────────────────────
-# Certaines lignes n'ont que 2 colonnes : l'ID et le témoignage (sans code 0x).
-# On détecte ces lignes : la colonne 'Code' ne contient pas '0x'.
+# ── Fixing shifted rows ──────────────────────────────────────────
+# Some rows only have 2 columns: the ID and the testimony (no 0x code).
+# Detect them: the 'Code' column does not contain '0x'.
 mask_decalage = ~df_clean['Code'].astype(str).str.contains('0x', na=False)
 
-# Pour ces lignes : on déplace la valeur de 'Code' vers 'Testimonies'
-# et on force la colonne 'Code' à la valeur neutre '0x000000'
+# For these rows: move the 'Code' value to 'Testimonies'
+# and set the 'Code' column to the neutral value '0x000000'
 df_clean.loc[mask_decalage, 'Testimonies'] = df_clean.loc[mask_decalage, 'Code']
 df_clean.loc[mask_decalage, 'Code'] = '0x000000'
 
-# ── Suppression des valeurs manquantes et des doublons ──────────────────────
-# On supprime les lignes sans témoignage (NaN dans 'Testimonies')
+# ── Removing missing values and duplicates ──────────────────────
+# Drop rows without a testimony (NaN in 'Testimonies')
 df_final = df_clean.dropna(subset=['Testimonies']).copy()
 
-# On supprime les témoignages en double (même texte)
+# Drop duplicate testimonies (same text)
 df_final = df_final.drop_duplicates(subset=['Testimonies'])
 
-# Remplir les codes manquants restants par la valeur par défaut
+# Fill remaining missing codes with the default value
 df_final['Code'] = df_final['Code'].fillna('0x000000')
 
 
-# ── Fonction de nettoyage du texte ──────────────────────────────────────────
+# ── Text cleaning function ──────────────────────────────────────────
 def clean_text(text):
     """
-    Nettoie un témoignage textuel :
-    - Vérifie que l'entrée est bien une chaîne non vide
-    - Convertit en minuscules
-    - Supprime tout caractère non alphabétique (ponctuation, chiffres, etc.)
-    - Normalise les espaces multiples
-    - Tokenise par split simple
-    - Supprime les stop words anglais de sklearn
-    - Retourne '0x000000' si le résultat est vide
+    Clean a text testimony:
+    - Check that the input is a non-empty string
+    - Convert to lowercase
+    - Remove every non-alphabetic character (punctuation, digits, etc.)
+    - Normalize multiple spaces
+    - Tokenize with a simple split
+    - Remove sklearn's English stop words
+    - Return '0x000000' if the result is empty
     """
-    # Si la valeur n'est pas une chaîne valide, retourner le code vide
+    # If the value is not a valid string, return the empty code
     if not isinstance(text, str) or text.strip() == '':
         return '0x000000'
 
-    # Mise en minuscules
+    # Lowercase
     text = text.lower()
 
-    # Garder uniquement les lettres et les espaces (supprimer ponctuation, chiffres...)
+    # Keep only letters and spaces (remove punctuation, digits...)
     text = re.sub(r'[^a-z\s]', ' ', text)
 
-    # Normaliser les espaces multiples en un seul espace
+    # Collapse multiple spaces into one
     text = re.sub(r'\s+', ' ', text).strip()
 
-    # Tokenisation : séparation par espace et suppression des stop words
+    # Tokenization: split on spaces and remove stop words
     tokens = [
         tok for tok in text.split(' ')
         if tok and tok not in ENGLISH_STOP_WORDS
     ]
 
-    # Reconstruction du texte nettoyé
+    # Rebuild the cleaned text
     cleaned = ' '.join(tokens).strip()
 
-    # Si après nettoyage le texte est vide, retourner le code par défaut
+    # If the text is empty after cleaning, return the default code
     return cleaned if cleaned else '0x000000'
 
 
-# Application du nettoyage à toute la colonne 'Testimonies'
+# Apply the cleaning to the whole 'Testimonies' column
 df_final['Testimonies'] = df_final['Testimonies'].apply(clean_text)
 
-# Sauvegarde du dataset nettoyé dans un nouveau fichier CSV
+# Save the cleaned dataset to a new CSV file
 df_final.to_csv('Student_Dataset_Cleaned.csv', index=False)
 
-# Métriques de nettoyage
-print('Nombre de lignes après nettoyage :', len(df_final))
-print('Codes distincts :', df_final['Code'].nunique())
+# Cleaning metrics
+print('Number of rows after cleaning:', len(df_final))
+print('Distinct codes:', df_final['Code'].nunique())
 print(df_final.head())
 
 
 # =============================================================================
-# SECTION 4 : VECTORISATION TF-IDF ET RÉDUCTION DE DIMENSIONNALITÉ
+# SECTION 4: TF-IDF VECTORIZATION AND DIMENSIONALITY REDUCTION
 # =============================================================================
-# On transforme les textes nettoyés en vecteurs numériques via TF-IDF,
-# puis on réduit la dimensionnalité avec TruncatedSVD (LSA)
-# et on normalise avec L2 pour préparer le K-Means basé sur la cosine distance.
+# Turn the cleaned texts into numerical vectors with TF-IDF,
+# then reduce dimensionality with TruncatedSVD (LSA)
+# and apply L2 normalization to prepare cosine-distance-based K-Means.
 # ─────────────────────────────────────────────
 
 # ── TF-IDF Vectorization ────────────────────────────────────────────────────
-# max_df=0.8 : ignorer les mots présents dans plus de 80% des documents (trop communs)
-# min_df=2   : ignorer les mots présents dans moins de 2 documents (trop rares)
-# stop_words='english' : supprimer les stop words anglais intégrés
+# max_df=0.8: ignore words present in more than 80% of documents (too common)
+# min_df=2  : ignore words present in fewer than 2 documents (too rare)
+# stop_words='english': remove built-in English stop words
 vectorizer = TfidfVectorizer(max_df=0.8, min_df=2, stop_words='english')
 X = vectorizer.fit_transform(df_final['Testimonies'])
 
-# ── Réduction de dimensionnalité par SVD tronquée (LSA) ─────────────────────
-# On réduit l'espace TF-IDF (potentiellement des milliers de dimensions)
-# à 100 composantes en conservant l'essentiel de la variance (≈30%)
+# ── Dimensionality reduction with truncated SVD (LSA) ─────────────────────
+# Reduce the TF-IDF space (potentially thousands of dimensions)
+# to 100 components while keeping ~41% of the variance (0.413 in the notebook run)
 n_components = 100
 svd = TruncatedSVD(n_components=n_components, random_state=42)
 X_reduced = svd.fit_transform(X)
 
-# ── Normalisation L2 ─────────────────────────────────────────────────────────
-# K-Means fonctionne mieux avec la similarité cosinus sur les textes.
-# La normalisation L2 convertit les vecteurs en unitaires, ce qui revient
-# à utiliser la distance cosinus comme métrique implicite.
+# ── L2 normalization ─────────────────────────────────────────────────────────
+# K-Means works better with cosine similarity on text.
+# L2 normalization turns vectors into unit vectors, which amounts
+# to using cosine distance as an implicit metric.
 X_normalized = normalize(X_reduced, norm='l2', axis=1)
 
-print(f"Matrice TF-IDF normalisée : {X_normalized.shape}")
-print(f"Variance expliquée par les {n_components} composantes : {svd.explained_variance_ratio_.sum():.3f}")
+print(f"Normalized TF-IDF matrix: {X_normalized.shape}")
+print(f"Variance explained by the {n_components} components: {svd.explained_variance_ratio_.sum():.3f}")
 
 
 # =============================================================================
-# SECTION 5 : VISUALISATION DES POIDS TF-IDF (TOP 10 / BOTTOM 10)
+# SECTION 5: TF-IDF WEIGHT VISUALIZATION (TOP 10 / BOTTOM 10)
 # =============================================================================
-# Affichage des 10 mots avec le score TF-IDF moyen le plus élevé (significatifs)
-# et des 10 mots avec le score le plus bas (très communs ou très rares).
+# Show the 10 words with the highest mean TF-IDF score (significant)
+# and the 10 words with the lowest score (very common or very rare).
 # ─────────────────────────────────────────────
 
-# Récupération des noms de features (mots du vocabulaire TF-IDF)
+# Get feature names (words of the TF-IDF vocabulary)
 feature_names = vectorizer.get_feature_names_out()
 
-# Calcul du poids moyen de chaque mot sur l'ensemble du corpus
+# Compute the mean weight of each word over the whole corpus
 mean_weights = np.asarray(X.mean(axis=0)).ravel()
 
-# Construction d'un DataFrame pour faciliter le tri
+# Build a DataFrame to make sorting easier
 df_weights = pd.DataFrame({'word': feature_names, 'weight': mean_weights})
 
-# Sélection des 10 mots les plus et les moins importants
+# Select the 10 most and least important words
 df_top = df_weights.sort_values(by='weight', ascending=False).head(10)
 df_bottom = df_weights.sort_values(by='weight', ascending=True).head(10)
 
-# ── Affichage côte à côte des deux graphiques ────────────────────────────────
+# ── Plot both charts side by side ────────────────────────────────
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
-# Graphique 1 : mots les plus significatifs (poids élevé)
+# Chart 1: most significant words (high weight)
 ax1.barh(df_top['word'], df_top['weight'], color='skyblue')
 ax1.set_title('Top 10: Words with the most weight (Significant)')
-ax1.invert_yaxis()   # Inverser pour afficher le mot le plus important en haut
-ax1.set_xlabel('Score TF-IDF moyen')
+ax1.invert_yaxis()   # Invert so the most important word is on top
+ax1.set_xlabel('Mean TF-IDF score')
 
-# Graphique 2 : mots les moins significatifs (poids faible)
+# Chart 2: least significant words (low weight)
 ax2.barh(df_bottom['word'], df_bottom['weight'], color='salmon')
 ax2.set_title('Bottom 10: Words with the least weight (Common/Rare)')
 ax2.invert_yaxis()
-ax2.set_xlabel('Score TF-IDF moyen')
+ax2.set_xlabel('Mean TF-IDF score')
 
 plt.tight_layout()
 plt.show()
 
 
 # =============================================================================
-# SECTION 6 : DÉTERMINATION DU NOMBRE OPTIMAL DE CLUSTERS (k)
+# SECTION 6: FINDING THE OPTIMAL NUMBER OF CLUSTERS (k)
 # =============================================================================
-# Deux méthodes complémentaires pour choisir k :
-#   - Méthode du coude (Elbow / Knee) : on cherche le point d'inflexion de l'inertie
-#   - Score Silhouette : mesure la cohésion interne et la séparation entre clusters
-#     (plus le score est élevé, meilleure est la séparation)
+# Two complementary methods to choose k:
+#   - Elbow / Knee method: look for the inflection point of the inertia
+#   - Silhouette score: measures internal cohesion and separation between clusters
+#     (the higher the score, the better the separation)
 # ─────────────────────────────────────────────
 
-inertie = []             # Stocke l'inertie (somme des distances intra-cluster) pour chaque k
-silhouette_scores = []   # Stocke le score silhouette pour chaque k
-K_range = range(2, 16)   # Tester de k=2 à k=15
+inertie = []             # Inertia (sum of intra-cluster distances) for each k
+silhouette_scores = []   # Silhouette score for each k
+K_range = range(2, 16)   # Test k=2 to k=15
 
 for k in K_range:
-    # Entraînement du modèle K-Means pour k clusters
-    # n_init=10 : effectue 10 initialisations aléatoires et garde la meilleure
+    # Train the K-Means model for k clusters
+    # n_init=10: run 10 random initializations and keep the best one
     model = KMeans(n_clusters=k, random_state=42, n_init=10)
     labels = model.fit_predict(X_normalized)
 
-    # Enregistrement de l'inertie du modèle
+    # Record the model inertia
     inertie.append(model.inertia_)
 
-    # Calcul du score silhouette (métrique euclidienne sur vecteurs normalisés)
+    # Compute the silhouette score (Euclidean metric on normalized vectors)
     score = silhouette_score(X_normalized, labels, metric='euclidean')
     silhouette_scores.append(score)
 
-# ── Affichage des deux méthodes côte à côte ──────────────────────────────────
+# ── Plot both methods side by side ──────────────────────────────────
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 6))
 
-# Graphique 1 : Méthode du coude
+# Chart 1: elbow method
 ax1.plot(K_range, inertie, 'bx-', markersize=8, linewidth=2)
 ax1.set_xticks(K_range)
 ax1.set_xlabel('Number of clusters (k)')
@@ -242,7 +242,7 @@ ax1.set_ylabel('Inertia')
 ax1.set_title('Knee Method for determining the optimal k (up to 15)')
 ax1.grid(True)
 
-# Graphique 2 : Score Silhouette
+# Chart 2: silhouette score
 ax2.plot(K_range, silhouette_scores, 'rx-', markersize=8, linewidth=2)
 ax2.set_xticks(K_range)
 ax2.set_xlabel('Number of clusters (k)')
@@ -255,39 +255,39 @@ plt.show()
 
 
 # =============================================================================
-# SECTION 7 : CLUSTERING FINAL AVEC k=14
+# SECTION 7: FINAL CLUSTERING WITH k=14
 # =============================================================================
-# Après analyse des méthodes du coude et silhouette sur k=2..15,
-# k=14 offre le meilleur équilibre entre compacité et séparation des clusters.
+# After analyzing the elbow and silhouette methods over k=2..15,
+# k=14 gives the best balance between cluster compactness and separation.
 # ─────────────────────────────────────────────
 
-# Entraînement du modèle K-Means final avec 14 clusters
+# Train the final K-Means model with 14 clusters
 kmeans_final = KMeans(n_clusters=14, random_state=42, n_init=10)
 
-# Assignation de chaque témoignage à un cluster (colonne 'Cluster_Predit')
+# Assign each testimony to a cluster ('Cluster_Predit' column)
 df_final['Cluster_Predit'] = kmeans_final.fit_predict(X_normalized)
 
-# Affichage de la distribution des témoignages par cluster
+# Show the distribution of testimonies per cluster
 print("Distribution of testimonies across the 14 clusters:")
 print(df_final['Cluster_Predit'].value_counts().sort_index().to_string())
 
-# Score silhouette global du modèle final
+# Overall silhouette score of the final model
 final_silhouette = silhouette_score(X_normalized, df_final['Cluster_Predit'], metric='euclidean')
 print(f"\nFinal Silhouette Score: {final_silhouette:.3f}")
 
-# ── Analyse thématique : top 5 mots par cluster ──────────────────────────────
-# Pour chaque cluster, on calcule la moyenne des scores TF-IDF des témoignages
-# qui lui appartiennent, et on extrait les 5 mots les plus représentatifs.
+# ── Thematic analysis: top 5 words per cluster ──────────────────────────────
+# For each cluster, compute the mean TF-IDF scores of its testimonies
+# and extract the 5 most representative words.
 distances = kmeans_final.transform(X_normalized)
 feature_names = vectorizer.get_feature_names_out()
 
 for i in range(14):
     cluster_indices = df_final['Cluster_Predit'] == i
     if cluster_indices.sum() > 0:
-        # Moyenne des vecteurs TF-IDF pour les témoignages de ce cluster
+        # Mean TF-IDF vector for the testimonies of this cluster
         cluster_tfidf = X[cluster_indices.values].mean(axis=0).A1
 
-        # Indices des 5 mots avec les scores moyens les plus élevés
+        # Indices of the 5 words with the highest mean scores
         top_indices = cluster_tfidf.argsort()[-5:][::-1]
         top_words = [feature_names[idx] for idx in top_indices]
         print(f"CLUSTER {i} : {', '.join(top_words)}")
@@ -298,39 +298,39 @@ print("\n" + "-" * 60)
 
 
 # =============================================================================
-# SECTION 8 : VISUALISATION DES CLUSTERS AVEC t-SNE
+# SECTION 8: CLUSTER VISUALIZATION WITH t-SNE
 # =============================================================================
-# t-SNE (t-distributed Stochastic Neighbor Embedding) réduit les vecteurs
-# normalisés en 2 dimensions pour permettre une visualisation lisible des clusters.
-# - perplexity=30 : équilibre entre structure locale et globale (recommandé 5-50)
-# - max_iter=1000 : nombre d'itérations pour la convergence
-# - cmap='tab20'  : palette de 20 couleurs pour distinguer les 14 clusters
+# t-SNE (t-distributed Stochastic Neighbor Embedding) reduces the normalized
+# vectors to 2 dimensions for a readable view of the clusters.
+# - perplexity=30: balance between local and global structure (recommended 5-50)
+# - max_iter=1000: number of iterations for convergence
+# - cmap='tab20' : 20-color palette to distinguish the 14 clusters
 # ─────────────────────────────────────────────
 
-# Réduction 2D avec t-SNE
+# 2D reduction with t-SNE
 tsne = TSNE(n_components=2, random_state=42, perplexity=30, max_iter=1000)
 coords = tsne.fit_transform(X_normalized)
 
-# Labels de couleur : indice de cluster pour chaque point
+# Color labels: cluster index for each point
 clusters_couleurs = df_final['Cluster_Predit']
 
 plt.figure(figsize=(14, 10))
 
-# Nuage de points coloré par cluster
+# Scatter plot colored by cluster
 scatter = plt.scatter(
     coords[:, 0], coords[:, 1],
     c=clusters_couleurs,
-    cmap='tab20',       # Palette avec au moins 14 couleurs distinctes
-    alpha=0.8,          # Légère transparence pour voir les superpositions
-    edgecolors='w',     # Bordure blanche pour mieux distinguer les points
-    s=70                # Taille des points
+    cmap='tab20',       # Palette with at least 14 distinct colors
+    alpha=0.8,          # Slight transparency to show overlaps
+    edgecolors='w',     # White edge to tell points apart
+    s=70                # Point size
 )
 
 plt.title("Visualization of the 14 Testimonial Clusters (t-SNE)")
 plt.xlabel("t-SNE axis 1")
 plt.ylabel("t-SNE axis 2")
 
-# Barre de couleur numérotée de 0 à 13 pour identifier chaque cluster
+# Colorbar numbered 0 to 13 to identify each cluster
 ticks = list(range(14))
 cb = plt.colorbar(scatter, ticks=ticks, label="Cluster Number")
 cb.set_ticklabels(ticks)
