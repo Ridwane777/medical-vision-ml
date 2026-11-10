@@ -8,39 +8,73 @@ The goal is to show how far scikit-learn baselines go on raw medical images and 
 
 | Part | Location | What it does |
 | --- | --- | --- |
-| Supervised learning | `supervised_learning/dataset_knee_osteoarthritis.ipynb` | Knee X-rays regrouped into Healthy (KL grade 0) vs. Sick (grades 1-4), balanced, loaded as 224x224 arrays, flattened and normalized. Compares SVM, Random Forest and Logistic Regression, then tunes them with `GridSearchCV`. |
+| Supervised learning | `src/kneeclf/`, `configs/`, `supervised_learning/knee_classification.ipynb` | Knee X-rays, KL grades mapped to no OA (KL 0-1) vs. OA (KL 2-4). Raw pixels + PCA and a NumPy HOG descriptor, six scikit-learn candidates tuned by `GridSearchCV`, decision threshold tuned on validation for a target recall, test set used once. Package, CLI, viewer notebook and tests. |
 | Legacy EDA | `legacy/dataset_pneumonia_eda.ipynb` | Earlier exploratory analysis of chest X-rays (NORMAL vs. PNEUMONIA): split sizes, class balance, image sizes, samples. |
 | Unsupervised learning | `src/textclust/`, `unsupervised_learning/` | Adaptive clustering of any CSV of texts: robust loading, cleaning, language detection, TF-IDF, TruncatedSVD (LSA), automatic choice of k and of K-Means vs. HDBSCAN, t-SNE, JSON report. Package, CLI, notebook, tests and [detailed README](unsupervised_learning/README.md). |
-| Tests | `tests/` | `unittest` suite proving the clustering adapts to different CSV formats and corpora. |
+| Tests | `tests/` | `unittest` suites: clustering adapts to different CSV formats; knee pipeline on synthetic images (loader, label schemes, balancing, HOG, threshold, end to end). |
 | Decisions | `docs/adr/` | Architecture Decision Records. |
 
 ## Results
 
-All figures below come from the saved notebook outputs.
-
 ### Knee osteoarthritis (binary)
 
-Balanced dataset after regrouping grades 1-4 into "Sick":
+> **Results pending full run.** The full training (`configs/full.json`) runs on a remote server; its numbers will be
+> copied here from `runs/<timestamp>/metrics.json`. No figure in this section is a result yet.
 
-| Split | Healthy | Sick | Total |
-| --- | --- | --- | --- |
-| Train | 2286 | 2284 | 4570 |
-| Validation | 328 | 325 | 653 |
-| Test | 639 | 637 | 1276 |
+What the pipeline does (`src/kneeclf`):
 
-Each image becomes a vector of 50,176 features (224 x 224 pixels).
+1. **Labels** ([ADR-0002](docs/adr/0002-binary-label-scheme.md)): KL 0-1 = no OA, KL 2-4 = OA (radiographic
+   definition). The previous scheme, KL 0 vs. 1-4, is still available with `--label-scheme kl0_vs_1to4`.
+2. **Data**: 224x224 PNGs loaded with Pillow as float32 in [0, 1], downscaled by block mean (112 px for the full run).
+   Train is balanced by undersampling; validation and test keep their real class ratio.
+3. **Features and models** ([ADR-0003](docs/adr/0003-classical-features-and-recall-first-evaluation.md)): raw pixels
+   -> StandardScaler -> PCA, and a HOG descriptor written in NumPy (9 bins, 8x8 cells, 2x2 blocks, L2-Hys). Six
+   candidates: raw-PCA-LogReg, raw-PCA-SVC, HOG-LogReg, HOG-SVC, HOG-RandomForest, HOG-PCA-HistGradientBoosting, each
+   tuned by `GridSearchCV` (stratified 3-fold, ROC-AUC; recall, F1, balanced accuracy and average precision recorded).
+4. **Recall first**: the best candidate (validation ROC-AUC) gets the highest threshold that still reaches a recall of
+   0.85 on validation (or the F2-optimal one). The **test set is used once**, at the end: accuracy, balanced accuracy,
+   precision, recall (sensitivity), specificity, F1, F2, ROC-AUC, PR-AUC, confusion matrix, ROC/PR curves.
 
-Baseline accuracy on the validation set (default hyperparameters):
-
-| Model | Validation accuracy |
+| Metric (test, selected model) | Value |
 | --- | --- |
-| SVM (`SVC`, default RBF kernel) | 66.46% |
-| Random Forest | 59.42% |
-| Logistic Regression (`saga`) | not printed in the saved outputs |
+| Selected candidate | pending full run |
+| Recall (sensitivity) | pending full run |
+| Specificity | pending full run |
+| Precision | pending full run |
+| F2 | pending full run |
+| ROC-AUC / PR-AUC | pending full run |
 
-The GridSearchCV, test-set evaluation and recall cells were not executed in the saved notebook, so no tuned parameters or test metrics are reported here. Run the notebook to reproduce them.
+Previous approach, kept for the record (old notebook, KL 0 vs. 1-4, balanced validation, raw 224x224 pixels,
+default hyperparameters): validation accuracy SVM 66.46%, Random Forest 59.42%. It is not comparable with the new
+metrics (different labels and class ratio).
 
-Takeaway: on flattened raw pixels, classical models stay well below what convolutional networks reach on this task; the notebook is a baseline, not a diagnostic tool.
+#### Run it
+
+```bash
+# smoke test, about 15 s on a laptop (150 images per class, 64 px, tiny grids; numbers are not results)
+PYTHONPATH=src python -m kneeclf --data supervised_learning/Dataset_Knee_Osteoarthritis --config configs/quick.json
+
+# full run (all images, 112 px, medium grids, 4 parallel jobs)
+PYTHONPATH=src python -m kneeclf --data /path/to/Dataset_Knee_Osteoarthritis --config configs/full.json --n-jobs 4
+```
+
+On a remote server, detach the run and follow the log:
+
+```bash
+nohup env PYTHONPATH=src python -m kneeclf --data /path/to/Dataset_Knee_Osteoarthritis \
+    --config configs/full.json --n-jobs 4 --output runs > kneeclf_full.log 2>&1 &
+tail -f kneeclf_full.log            # or runs/<timestamp>/train.log
+# with tmux instead: tmux new -s knee, run the same command without nohup, detach with Ctrl-b d
+```
+
+Each run writes `runs/<timestamp>/`: `metrics.json` (config, data profile, environment versions, per-candidate CV and
+validation scores, test metrics, timings), `params.json`, `comparison.csv` / `comparison.md`, `model.pkl` (pickle:
+feature extractor + tuned pipeline + threshold), `train.log` and `figures/`. Open
+`supervised_learning/knee_classification.ipynb` to display a run.
+
+Memory: the full run at 112 px holds about 7,400 images x 12,544 pixels x 4 bytes = 0.37 GB of pixels plus 0.18 GB of
+HOG features (6,084 dims), a few GB at peak with four workers. At 224 px (`"image_size": null`) the arrays grow to
+1.48 GB + 0.77 GB (26,244 HOG dims) before copies: plan for 16 GB of RAM.
 
 ### Chest X-ray pneumonia (EDA only)
 
@@ -77,13 +111,16 @@ Each run writes `runs/<timestamp>/metrics.json` plus plots (git-ignored). The de
 
 Datasets are not stored in this repository. Download them and place them as follows (paths are relative to the folder of each notebook, so launch Jupyter from the repository root and open the notebooks in place).
 
-**Knee X-rays**: Kaggle [Knee Osteoarthritis Dataset with Severity Grading](https://www.kaggle.com/datasets/shashwatwork/knee-osteoarthritis-dataset-with-severity). Extract it so that the grade folders are at:
+**Knee X-rays**: Kaggle [Knee Osteoarthritis Dataset with Severity Grading](https://www.kaggle.com/datasets/shashwatwork/knee-osteoarthritis-dataset-with-severity)
+(224x224 8-bit grayscale PNG, one folder per KL grade). The dataset is not stored here; pass its root with `--data`.
+Expected layout (`auto_test` is ignored unless listed in `extra_test_splits`):
 
 ```
-supervised_learning/Dataset_Knee_Osteoarthritis/{train,val,test}/{0,1,2,3,4}/
+<root>/{train,val,test,auto_test}/{0,1,2,3,4}/*.png
 ```
 
-The first notebook cell builds `supervised_learning/Dataset_Knee_Osteoarthritis_Balanced/{train,val,test}/{healthy,sick}/` from it.
+The default location `supervised_learning/Dataset_Knee_Osteoarthritis/` is git-ignored. Train counts per grade:
+2286 / 1046 / 1516 / 757 / 173.
 
 **Chest X-rays**: Kaggle [Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia). Expected layout:
 
@@ -106,11 +143,12 @@ pip install -r requirements.txt
 jupyter lab
 ```
 
-Then open the notebooks, or run the clustering from the repository root:
+Then open the notebooks, or run the pipelines from the repository root:
 
 ```bash
 PYTHONPATH=src python -m textclust unsupervised_learning/Student_Dataset.csv
 python unsupervised_learning/unsupervised_learning.py   # same, default dataset
+PYTHONPATH=src python -m kneeclf --data supervised_learning/Dataset_Knee_Osteoarthritis --config configs/quick.json
 ```
 
 Run the tests:

@@ -1,6 +1,8 @@
 venv
 # Datasets (not distributed)
 supervised_learning/Dataset_Knee_Osteoarthritis/
+**/Dataset_Knee_Osteoarthritis*/
+nohup.out
 supervised_learning/Dataset_Knee_Osteoarthritis_Balanced/
 legacy/dataset_pneumonia/
 dataset_pneumonia/
@@ -9,6 +11,6 @@ Student_Dataset*.csv
 *.pkl
 venv/
 
-# Clustering run outputs (metrics, plots, assignments)
+# Run outputs (textclust and kneeclf): metrics, plots, models
 runs/
 __pycache__/
