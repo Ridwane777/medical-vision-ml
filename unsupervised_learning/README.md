@@ -1,97 +1,87 @@
-# Unsupervised Learning - Student Dataset Clustering
+# Unsupervised Learning - Adaptive Testimony Clustering
 
-This folder contains a complete unsupervised clustering pipeline on student testimonies. The main script is `unsupervised_learning.py`; it reproduces all the work originally done in the notebook `Student_Dataset_preprocessing.ipynb`.
+This folder clusters free-text patient testimonies into themes. The logic lives in the reusable package
+[`src/textclust`](../src/textclust); this folder holds the notebook and a thin script wrapper. The pipeline is not tied to
+`Student_Dataset.csv`: it adapts to any CSV of texts without code changes. The decision behind this design is recorded in
+[ADR-0001](../docs/adr/0001-adaptive-clustering-pipeline.md).
 
-## Objective
+| File | Role |
+| --- | --- |
+| `clustering.ipynb` | Step-by-step run with explanations. The first cell holds the only parameters: `CSV_PATH`, plus optional overrides. Saved with outputs from the real dataset. |
+| `unsupervised_learning.py` | Thin wrapper around the CLI. With no CSV argument it runs on `Student_Dataset.csv` and writes to `../runs/`. |
+| `../src/textclust/` | `io.py` (loading), `clean.py` (normalization, language), `features.py` (TF-IDF, SVD), `model.py` (choice of k and algorithm), `report.py` (terms, examples, plots, JSON), `pipeline.py` (`run()`), `__main__.py` (CLI). |
+| `../tests/test_textclust.py` | `unittest` suite built on generated CSV files. |
 
-The goal is to detect thematic groups in text testimonies related to medical conditions. The pipeline goes from text preprocessing to K-Means clustering, then to identifying dominant themes and a t-SNE visualization.
-
-## Workflow structure
-
-### 1. Loading and cleaning the data
-- Initial read of the CSV `./Student_Dataset.csv` for a first overview.
-- Reload forcing 3 columns (`ID`, `Code`, `Testimonies`) with `on_bad_lines='skip'` to ignore corrupted lines.
-- Fix shifted rows: if `Code` does not contain `0x`, the value is moved to `Testimonies` and `Code` is set to `0x000000`.
-- Remove rows without a testimony (`dropna`) and exact text duplicates (`drop_duplicates`).
-- Fill remaining missing codes with `0x000000`.
-
-### 2. Text preprocessing (`clean_text`)
-- Returns `0x000000` if the input is not a valid string or is empty.
-- Lowercasing.
-- Removal of every non-alphabetic character via `re.sub(r'[^a-z\s]', ' ', text)`.
-- Normalization of multiple spaces.
-- Tokenization with `split()` and removal of English stop words using sklearn's `ENGLISH_STOP_WORDS` list.
-- If the resulting text is empty, it is replaced by `0x000000`.
-- The cleaned dataset is saved to `Student_Dataset_Cleaned.csv`.
-
-### 2.a Definitions (basic NLP)
-- `Tokenization`: splitting a text stream into minimal units of meaning called tokens (words). It is the structuring step that turns a raw character string into a sequence an algorithm can use.
-- `Stop words`: very frequent words with no informative value (e.g. "the", "is", "and") that are removed to keep only meaningful terms.
-
-### 2.b Why these steps?
-- Removing case and punctuation normalizes the text.
-- Removing stop words prevents uninformative words from carrying weight.
-
-### 3. Vectorization
-- TF-IDF with `TfidfVectorizer(max_df=0.8, min_df=2, stop_words='english')`:
-  - `max_df=0.8`: ignores words present in more than 80% of documents (too common).
-  - `min_df=2`: ignores words present in fewer than 2 documents (too rare).
-- Visualization of the 10 words with the highest and the lowest mean TF-IDF weight (side-by-side charts).
-- Dimensionality reduction with `TruncatedSVD` to 100 components (~41% explained variance, 0.413 in the notebook run).
-- L2 normalization with `normalize(..., norm='l2')` to make distances consistent (implicit cosine similarity).
-
-### 3.a Technical definitions
-- `TF-IDF (Term Frequency-Inverse Document Frequency)`: statistical weighting method that measures how important a word is in a document relative to the whole corpus. It multiplies local frequency (TF) by global rarity (IDF), filtering out overly common words in favor of discriminative terms.
-
-- `TruncatedSVD (Singular Value Decomposition)`: linear dimensionality reduction technique optimized for sparse matrices (such as TF-IDF). It projects the data into a lower-dimensional latent space, keeping only the most significant components. In NLP this approach is often called LSA (Latent Semantic Analysis).
-
-- `L2 (Euclidean) normalization`: vector transformation that divides each component by the vector's Euclidean norm, bringing its total length to 1. It ensures that comparing two documents depends on their topic, not on their raw length.
-
-- `Silhouette Score`: metric that evaluates the quality of a partition by measuring whether each point fits well in its cluster (internal cohesion vs. external separation). A higher score indicates better clustering.
-
-### 4. Choosing the number of clusters
-- Loop over k=2..15 with K-Means (`n_init=10`, `random_state=42`).
-- Two complementary methods:
-  - **Inertia (elbow/knee method)**: looks for an elbow in the inertia curve.
-  - **Silhouette score**: evaluates cluster cohesion and separation.
-- Both curves are plotted side by side.
-
-### 5. Final K-Means (k=14)
-- After analyzing both curves over k=2..15, **k=14** is kept as the best balance between compactness and separation.
-- Each testimony receives a `Cluster_Predit` label.
-- The final silhouette score is computed on the selected model.
-- For each cluster: mean TF-IDF scores are computed and the **5 most representative words** are extracted.
-
-### 6. t-SNE visualization
-- 2D reduction with `TSNE(n_components=2, perplexity=30, max_iter=1000, random_state=42)`.
-- Scatter plot colored by cluster with the `tab20` palette (14 distinct colors) and a colorbar numbered 0 to 13.
-
-## Libraries used
-
-- `pandas`: tabular data manipulation
-- `numpy`: numerical computing
-- `matplotlib`: visualization
-- `re`: regular expressions for text cleaning
-- `scikit-learn`: TF-IDF, stop words, SVD, normalization, KMeans, silhouette score, t-SNE
+Allowed libraries (project constraint): scikit-learn, pandas, NumPy, Matplotlib, JupyterLab and the Python standard
+library. No NLTK, spaCy, embeddings or language-detection package.
 
 ## Running
 
-1. Activate the virtual environment (if needed):
-   ```bash
-   source venv/bin/activate
-   ```
-2. Run the script:
-   ```bash
-   python unsupervised_learning/unsupervised_learning.py
-   ```
-3. Check `Student_Dataset_Cleaned.csv` and the plots.
+```bash
+# from the repository root
+PYTHONPATH=src python -m textclust unsupervised_learning/Student_Dataset.csv --output runs
+python unsupervised_learning/unsupervised_learning.py          # same, with the default dataset
+PYTHONPATH=src python -m textclust any.csv --text-column review --label-column category
+python -m unittest discover -s tests -v                         # tests
+```
 
-## Code review notes
+Options: `--text-column` / `--label-column` (name or 0-based index), `--no-labels`, `--k` (force K-Means k),
+`--language en|fr|none`, `--ngram-max`, `--output`, `--quiet`. From Python: `textclust.run(csv_path, text_column=None,
+label_column=None, config=Config(...), output_dir="runs")` returns a `Result` dataclass.
 
-- Explain clearly why cleaning happens at the dataset level (`0x000000`, misaligned columns, duplicate removal).
-- Show that TF-IDF vectorization is needed to turn text into numerical features.
-- Mention that SVD is used to reduce dimensionality and avoid meaningless clustering in an overly large space.
-- Present the silhouette score as the clustering quality metric.
-- If needed, suggest an extension: testing other algorithms (DBSCAN, Agglomerative) for comparison.
+Each run writes `runs/<timestamp>/`: `metrics.json` (data profile, cleaning report, every parameter used, all candidate
+models, the k curve, cluster sizes, top terms, representative examples), `assignments.csv`, `k_selection.png`,
+`cluster_sizes.png`, `projection_2d.png`. `runs/` is git-ignored because it contains testimony text.
 
----
+## Adapts to any CSV
+
+| What | How it is detected | Override |
+| --- | --- | --- |
+| Encoding | first that decodes among `utf-8-sig`, `utf-8`, `latin-1` | - |
+| Delimiter | `csv.Sniffer` on the first 50 lines, fallback: the most consistent of `, ; tab \|` | `load_csv(delimiter=...)` |
+| Header | first row made of short, non-numeric names while the body has numeric or much longer values (fallback `Sniffer.has_header`) | `load_csv(header=True/False)` |
+| Ragged rows | a row with fewer fields than the table keeps its **longest field as the text** and fills the other columns left to right; a row with more fields has its surplus glued back into the text | - |
+| Text column | highest mean length x share of letters | `--text-column` |
+| Label column | categorical: 2 to sqrt(n) distinct values, at most n/2, at least 90% filled, not a monotonic ID, not constant | `--label-column`, `--no-labels` |
+| Language / stop words | stop-word overlap: scikit-learn English list (+ contraction fragments such as `ve`, `didn`) vs. a hand-written French list | `--language` |
+| TF-IDF bounds | `min_df` = 1 (< 50 docs), 2 (< 2,000), 3 (< 10,000), 5; `max_df` = 0.95 (< 100 docs), 0.8 | `features.build_features` |
+| SVD size | `min(100, n_terms - 1, n_docs - 1)`, or the fewest components reaching `Config.target_variance` | `Config` |
+| k range | 2 .. min(20, max(3, sqrt(n/2))), at most n - 1 | `--k`, `Config.k_max_cap` |
+| Algorithm | K-Means (best k) vs. HDBSCAN (`min_cluster_size` = 2% of n, at least 3): best cosine silhouette on non-noise points among candidates with >= 2 clusters and <= 30% noise | `Config.algorithms`, `Config.max_noise` |
+| 2D projection | t-SNE (perplexity = min(30, (n-1)/3)) from 30 documents, PCA below | `Config.projection` |
+
+Every random step uses `random_state=42`. When a label column exists, ARI, NMI, homogeneity and completeness are reported.
+
+## Results on `Student_Dataset.csv`
+
+Run of 2026-11-10 (`metrics.json`, same numbers as the saved notebook):
+
+- **Data profile**: 1,011 rows, no header, comma, UTF-8 with BOM. 397 rows had only 2 fields (shifted rows) and were
+  repaired by the longest-field rule. Column `col1` (the former `Code`) is **constant** (`0x000000` or empty), so it is
+  ignored: **this dataset has no external labels**, and only internal metrics can be computed.
+- **Cleaning**: 17 exact duplicates dropped, 994 testimonies kept. Language detected: English (53% of tokens are
+  English stop words, 9% French).
+- **Features**: 1,271 terms (`min_df=2`, `max_df=0.8`), SVD to 100 components, explained variance **0.415**.
+- **Model selection**: K-Means over k = 2..20. Cosine silhouette climbs from 0.049 (k=2) and plateaus around 0.12 from
+  k=13; the best is **k = 18, silhouette 0.125** (Calinski-Harabasz 15.5, Davies-Bouldin 3.48). HDBSCAN
+  (`min_cluster_size=20`) found 3 clusters with silhouette 0.161 but labelled **77% of the testimonies as noise**, so it
+  was not eligible. **Chosen: K-Means, k = 18, noise 0%.**
+- **Cluster sizes**: 27 to 96 testimonies.
+- **Examples of top terms**: `hot, blister, touched, small, red`; `itchy, rash, new, hives, raised`;
+  `wrist, elbow, forearm, hand, palm`; `shoulder, reaching, arm, overhead`; `chest, tightness, tight, pressure`;
+  `ear, pain, fever, hear`; `blood, doctor, sugar, high, pressure`; `foot, toe, shoes, pushing`.
+
+Comparison with the previous hard-coded script (k fixed at 14, Euclidean silhouette **0.068** on 1,002 testimonies): the
+numbers are not directly comparable, since the silhouette is now computed with the cosine metric and 8 more near
+duplicates are removed after normalization. The themes are the same body areas and symptom families.
+
+## Limitations
+
+- The silhouette curve has no clear peak: testimonies form a continuum of overlapping themes. k = 18 is "best among the
+  tried values", and k = 20 scores within 0.001. Some clusters are still mixed (cluster 2: `especially, feel, vision,
+  night, eye, gums`).
+- Bag-of-words cannot link synonyms (`breath` / `breathing` / `winded`): no stemming or embeddings are allowed by the
+  project constraint.
+- Language detection only knows English and French; any other language falls back to no stop-word list.
+- Header detection is a heuristic. When all columns are short words it relies on `csv.Sniffer`; use the overrides if it
+  guesses wrong.

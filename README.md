@@ -10,7 +10,9 @@ The goal is to show how far scikit-learn baselines go on raw medical images and 
 | --- | --- | --- |
 | Supervised learning | `supervised_learning/dataset_knee_osteoarthritis.ipynb` | Knee X-rays regrouped into Healthy (KL grade 0) vs. Sick (grades 1-4), balanced, loaded as 224x224 arrays, flattened and normalized. Compares SVM, Random Forest and Logistic Regression, then tunes them with `GridSearchCV`. |
 | Legacy EDA | `legacy/dataset_pneumonia_eda.ipynb` | Earlier exploratory analysis of chest X-rays (NORMAL vs. PNEUMONIA): split sizes, class balance, image sizes, samples. |
-| Unsupervised learning | `unsupervised_learning/` | Text cleaning, TF-IDF, TruncatedSVD (LSA), L2 normalization, K-Means (k = 2..15, elbow + silhouette), t-SNE visualization. Script, notebook and [detailed README](unsupervised_learning/README.md). |
+| Unsupervised learning | `src/textclust/`, `unsupervised_learning/` | Adaptive clustering of any CSV of texts: robust loading, cleaning, language detection, TF-IDF, TruncatedSVD (LSA), automatic choice of k and of K-Means vs. HDBSCAN, t-SNE, JSON report. Package, CLI, notebook, tests and [detailed README](unsupervised_learning/README.md). |
+| Tests | `tests/` | `unittest` suite proving the clustering adapts to different CSV formats and corpora. |
+| Decisions | `docs/adr/` | Architecture Decision Records. |
 
 ## Results
 
@@ -52,11 +54,24 @@ No model is trained in this notebook.
 
 ### Testimony clustering
 
-- 1002 testimonies after cleaning (deduplication, removal of empty rows).
-- TF-IDF + TruncatedSVD to 100 components: explained variance 0.413.
-- Final K-Means with **k = 14**: silhouette score **0.068** (low: clusters overlap, as expected for short free text).
-- Cluster sizes range from 39 to 130 testimonies.
-- Clusters are thematically readable, for example: `knee, ache, deep, leg, hip`; `wrist, forearm, hand, thumb, finger`; `itchy, rash, new, hives, raised`; `breath, chest, short, cough, feel`; `pressure, blood, chest, tightness, constant`.
+The clustering is an adaptive pipeline (`src/textclust`) that works on any CSV of texts without code changes. Results on `Student_Dataset.csv` (run of 2026-11-10, details in the [unsupervised README](unsupervised_learning/README.md)):
+
+- 1,011 rows loaded; 397 shifted rows (2 fields instead of 3) repaired automatically; 17 duplicates dropped, **994 testimonies** kept; language detected: English.
+- The `Code` column is constant (`0x000000`), so it is ignored: **no external labels exist**, only internal metrics are reported.
+- TF-IDF (1,271 terms) + TruncatedSVD to 100 components: explained variance 0.415.
+- Automatic selection between K-Means (k = 2..20) and HDBSCAN: **K-Means, k = 18, cosine silhouette 0.125**, noise 0%. HDBSCAN reached 0.161 but put 77% of the testimonies in noise, so it was rejected.
+- Cluster sizes from 27 to 96. Example themes: `itchy, rash, new, hives, raised`; `wrist, elbow, forearm, hand, palm`; `chest, tightness, tight, pressure`; `ear, pain, fever, hear`; `blood, doctor, sugar, high, pressure`.
+- The silhouette plateaus around 0.12 from k = 13: the themes overlap, as expected for short free text.
+
+#### Adapts to any CSV
+
+Auto-detected: encoding (UTF-8 with or without BOM, Latin-1), delimiter (`,` `;` tab `|`), header row, ragged rows (the longest field becomes the text), text column, optional label column (categorical, not an ID, not constant), language and stop words (English or French), TF-IDF and SVD sizes, the range of k, and the algorithm. Override with `--text-column`, `--label-column`, `--no-labels`, `--k`, `--language`, or a `Config` object in Python.
+
+```bash
+PYTHONPATH=src python -m textclust path/to/file.csv [--text-column C] [--label-column C] [--output runs]
+```
+
+Each run writes `runs/<timestamp>/metrics.json` plus plots (git-ignored). The design decision is recorded in [ADR-0001](docs/adr/0001-adaptive-clustering-pipeline.md).
 
 ## Data
 
@@ -78,34 +93,33 @@ legacy/dataset_pneumonia/{train,val,test}/{NORMAL,PNEUMONIA}/
 
 Note: the counts above (balanced 3400/3400 train, 850/850 validation) show the notebook was run on a re-split and balanced version of this dataset, not on the original Kaggle split.
 
-**Patient testimonies**: `Student_Dataset.csv` is not distributed. To run the clustering, provide a CSV at `unsupervised_learning/Student_Dataset.csv` with no header and three columns:
-
-| Column | Content |
-| --- | --- |
-| `ID` | integer identifier |
-| `Code` | hexadecimal code such as `0x000000` (may be missing) |
-| `Testimonies` | free English text describing symptoms |
-
-Malformed rows are handled by the cleaning step (see the [unsupervised README](unsupervised_learning/README.md)).
+**Patient testimonies**: `Student_Dataset.csv` is not distributed. Place it at `unsupervised_learning/Student_Dataset.csv`. The original file has no header and the columns `ID`, `Code` (always `0x000000`) and free English text, with some rows missing the `Code` field. Any other CSV of texts works too: the pipeline detects the layout (see "Adapts to any CSV" above).
 
 ## Setup
 
-Requires Python 3.9 or newer.
+Requires Python 3.9 or newer and scikit-learn 1.3 or newer (for `HDBSCAN`).
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-jupyter notebook
+jupyter lab
 ```
 
-Then open the notebooks, or run the clustering script from its folder:
+Then open the notebooks, or run the clustering from the repository root:
 
 ```bash
-cd unsupervised_learning && python unsupervised_learning.py
+PYTHONPATH=src python -m textclust unsupervised_learning/Student_Dataset.csv
+python unsupervised_learning/unsupervised_learning.py   # same, default dataset
 ```
 
-Main libraries: NumPy, pandas, Matplotlib, Pillow, scikit-learn, Jupyter.
+Run the tests:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Libraries (project constraint, nothing else is imported): NumPy, pandas, Matplotlib, scikit-learn, JupyterLab, Pillow, and the Python standard library.
 
 ## Author
 

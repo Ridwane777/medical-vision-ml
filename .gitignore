@@ -8,3 +8,7 @@ dataset_pneumonia/
 Student_Dataset*.csv
 *.pkl
 venv/
+
+# Clustering run outputs (metrics, plots, assignments)
+runs/
+__pycache__/
