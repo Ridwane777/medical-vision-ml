@@ -4,6 +4,11 @@ Classical machine learning on medical data, without deep learning: binary classi
 
 The goal is to show how far scikit-learn baselines go on raw medical images and text, and to make their limits measurable.
 
+**Context**: this started as a school project whose specification restricted the libraries to NumPy, pandas,
+Matplotlib, scikit-learn, JupyterLab, Pillow and the Python standard library (no deep learning framework). The solo
+refactor into tested packages keeps that constraint. Decisions, model card, data cards, performance and retrospective
+are in [`docs/`](docs/README.md).
+
 ## Project structure
 
 | Part | Location | What it does |
@@ -12,7 +17,7 @@ The goal is to show how far scikit-learn baselines go on raw medical images and 
 | Legacy EDA | `legacy/dataset_pneumonia_eda.ipynb` | Earlier exploratory analysis of chest X-rays (NORMAL vs. PNEUMONIA): split sizes, class balance, image sizes, samples. |
 | Unsupervised learning | `src/textclust/`, `unsupervised_learning/` | Adaptive clustering of any CSV of texts: robust loading, cleaning, language detection, TF-IDF, TruncatedSVD (LSA), automatic choice of k and of K-Means vs. HDBSCAN, t-SNE, JSON report. Package, CLI, notebook, tests and [detailed README](unsupervised_learning/README.md). |
 | Tests | `tests/` | `unittest` suites: clustering adapts to different CSV formats; knee pipeline on synthetic images (loader, label schemes, balancing, HOG, threshold, end to end). |
-| Decisions | `docs/adr/` | Architecture Decision Records. |
+| Documentation | [`docs/`](docs/README.md) | Architecture Decision Records, model card, data cards, performance, retrospective. |
 
 ## Results
 
