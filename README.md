@@ -18,8 +18,9 @@ The goal is to show how far scikit-learn baselines go on raw medical images and 
 
 ### Knee osteoarthritis (binary)
 
-> **Results pending full run.** The full training (`configs/full.json`) runs on a remote server; its numbers will be
-> copied here from `runs/<timestamp>/metrics.json`. No figure in this section is a result yet.
+> Full run of `configs/full.json` on 2026-11-11 (8-core CPU server, 4 workers, 36 min). Train: 4,892 images balanced
+> 2,446 / 2,446; validation: 826 (481 / 345); test: 1,656 (935 / 721). Outputs: [`results/supervised/`](results/supervised/)
+> (metrics, comparison, figures; the 200 MB model file is not versioned).
 
 What the pipeline does (`src/kneeclf`):
 
@@ -37,12 +38,32 @@ What the pipeline does (`src/kneeclf`):
 
 | Metric (test, selected model) | Value |
 | --- | --- |
-| Selected candidate | pending full run |
-| Recall (sensitivity) | pending full run |
-| Specificity | pending full run |
-| Precision | pending full run |
-| F2 | pending full run |
-| ROC-AUC / PR-AUC | pending full run |
+| Selected candidate | HOG + SVC (RBF, C=10) |
+| Recall (sensitivity) | **0.831** |
+| Specificity | 0.700 |
+| Precision | 0.681 |
+| F2 | 0.796 |
+| ROC-AUC / PR-AUC | **0.861** / 0.854 |
+| Balanced accuracy | 0.765 |
+| Confusion matrix | TN 654 · FP 281 · FN 122 · TP 599 |
+
+Candidates on validation (threshold set for recall 0.85, so specificity is the comparable number):
+
+| Candidate | CV ROC-AUC | Val ROC-AUC | Val specificity | Search time |
+| --- | --- | --- | --- | --- |
+| HOG + SVC | 0.861 | **0.861** | **0.674** | 623 s |
+| HOG + LogReg | 0.854 | 0.857 | 0.645 | 19 s |
+| HOG + RandomForest | 0.822 | 0.838 | 0.634 | 409 s |
+| HOG + PCA + HistGradientBoosting | 0.802 | 0.809 | 0.534 | 759 s |
+| raw pixels + PCA + SVC | 0.780 | 0.792 | 0.551 | 70 s |
+| raw pixels + PCA + LogReg | 0.786 | 0.779 | 0.482 | 132 s |
+
+Takeaways: the hand-written HOG descriptor is the main gain (+0.07 ROC-AUC over raw pixels for the same model
+family); HOG + LogReg comes within 0.004 ROC-AUC of the SVC for 30 times less search time, a reasonable choice if
+inference cost matters. Test recall (0.831) lands slightly below the 0.85 validation target: the threshold does not
+transfer perfectly. This remains a classical-ML baseline, not a diagnostic tool.
+
+![ROC and precision-recall curves on the test set](results/supervised/figures/test_curves.png)
 
 Previous approach, kept for the record (old notebook, KL 0 vs. 1-4, balanced validation, raw 224x224 pixels,
 default hyperparameters): validation accuracy SVM 66.46%, Random Forest 59.42%. It is not comparable with the new

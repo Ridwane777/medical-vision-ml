@@ -14,3 +14,4 @@ venv/
 # Run outputs (textclust and kneeclf): metrics, plots, models
 runs/
 __pycache__/
+results/**/model.pkl

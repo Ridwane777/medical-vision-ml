@@ -1,0 +1,34 @@
+2026-11-11 11:05:22,646 INFO kneeclf: run dir: runs/20261111-110522-645381
+2026-11-11 11:05:22,647 INFO kneeclf: config: {"label_scheme": "kl01_vs_2to4", "image_size": 112, "balance_train": true, "max_per_class": null, "max_per_class_eval": null, "extra_test_splits": [], "candidates": ["raw_pca_logreg", "raw_pca_svc", "hog_logreg", "hog_svc", "hog_rf", "hog_pca_hgb"], "param_grids": {"raw_pca_logreg": {"pca__n_components": [100, 200], "logreg__C": [0.001, 0.01, 0.1]}, "raw_pca_svc": {"pca__n_components": [100, 200], "svc__C": [1, 10], "svc__gamma": ["scale"]}, "hog_logreg": {"logreg__C": [0.0003, 0.001, 0.01]}, "hog_svc": {"svc__C": [1, 10], "svc__gamma": ["scale", 0.0001]}, "hog_rf": {"rf__n_estimators": [300], "rf__max_depth": [null, 20], "rf__min_samples_leaf": [1, 5]}, "hog_pca_hgb": {"pca__n_components": [100], "hgb__learning_rate": [0.05, 0.1], "hgb__max_leaf_nodes": [31]}, "lbp_logreg": {"logreg__C": [0.01, 0.1, 1]}, "hog+lbp_svc": {"svc__C": [1, 10], "svc__gamma": ["scale"]}}, "hog": {"cell": 8, "block": 2, "bins": 9}, "cv_folds": 3, "selection_metric": "roc_auc", "threshold_mode": "target_recall", "target_recall": 0.85, "n_jobs": 4, "seed": 42, "verbose": 1}
+2026-11-11 11:05:27,979 INFO kneeclf.data: train: loaded 1000/4892 images
+2026-11-11 11:05:32,702 INFO kneeclf.data: train: loaded 2000/4892 images
+2026-11-11 11:05:37,496 INFO kneeclf.data: train: loaded 3000/4892 images
+2026-11-11 11:05:41,960 INFO kneeclf.data: train: loaded 4000/4892 images
+2026-11-11 11:05:45,203 INFO kneeclf.data: train: 4892 images ({'0': 2446, '1': 2446}), 112x112 px, 234.1 MB
+2026-11-11 11:05:47,372 INFO kneeclf.data: val: 826 images ({'0': 481, '1': 345}), 112x112 px, 39.5 MB
+2026-11-11 11:05:52,362 INFO kneeclf.data: test: loaded 1000/1656 images
+2026-11-11 11:05:55,596 INFO kneeclf.data: test: 1656 images ({'0': 935, '1': 721}), 112x112 px, 79.2 MB
+2026-11-11 11:06:28,897 INFO kneeclf: features hog: 6084 dims, 33.3s
+2026-11-11 11:06:31,466 INFO kneeclf: features raw: 12544 dims, 2.6s
+2026-11-11 11:06:31,467 INFO kneeclf: [1/6] grid search raw_pca_logreg on raw features
+2026-11-11 11:08:43,526 INFO kneeclf.models: raw_pca_logreg: best roc_auc=0.7856 params={'logreg__C': 0.01, 'pca__n_components': 200} (132.1s, 18 fits)
+2026-11-11 11:08:43,724 INFO kneeclf: raw_pca_logreg on val: roc_auc=0.7788 recall=0.8522 specificity=0.4823 f2=0.7644
+2026-11-11 11:08:43,725 INFO kneeclf: [2/6] grid search raw_pca_svc on raw features
+2026-11-11 11:09:53,784 INFO kneeclf.models: raw_pca_svc: best roc_auc=0.7800 params={'pca__n_components': 200, 'svc__C': 10, 'svc__gamma': 'scale'} (70.1s, 12 fits)
+2026-11-11 11:09:54,701 INFO kneeclf: raw_pca_svc on val: roc_auc=0.7924 recall=0.8522 specificity=0.5509 f2=0.7778
+2026-11-11 11:09:54,702 INFO kneeclf: [3/6] grid search hog_logreg on hog features
+2026-11-11 11:10:14,172 INFO kneeclf.models: hog_logreg: best roc_auc=0.8544 params={'logreg__C': 0.0003} (19.5s, 9 fits)
+2026-11-11 11:10:14,333 INFO kneeclf: hog_logreg on val: roc_auc=0.8566 recall=0.8522 specificity=0.6445 f2=0.7967
+2026-11-11 11:10:14,333 INFO kneeclf: [4/6] grid search hog_svc on hog features
+2026-11-11 11:20:37,225 INFO kneeclf.models: hog_svc: best roc_auc=0.8614 params={'svc__C': 10, 'svc__gamma': 'scale'} (622.9s, 12 fits)
+2026-11-11 11:21:04,283 INFO kneeclf: hog_svc on val: roc_auc=0.8607 recall=0.8522 specificity=0.6736 f2=0.8028
+2026-11-11 11:21:04,283 INFO kneeclf: [5/6] grid search hog_rf on hog features
+2026-11-11 11:27:53,607 INFO kneeclf.models: hog_rf: best roc_auc=0.8217 params={'rf__max_depth': 20, 'rf__min_samples_leaf': 5, 'rf__n_estimators': 300} (409.3s, 12 fits)
+2026-11-11 11:27:53,872 INFO kneeclf: hog_rf on val: roc_auc=0.8379 recall=0.8522 specificity=0.6341 f2=0.7946
+2026-11-11 11:27:53,872 INFO kneeclf: [6/6] grid search hog_pca_hgb on hog features
+2026-11-11 11:40:33,287 INFO kneeclf.models: hog_pca_hgb: best roc_auc=0.8018 params={'hgb__learning_rate': 0.1, 'hgb__max_leaf_nodes': 31, 'pca__n_components': 100} (759.4s, 6 fits)
+2026-11-11 11:40:35,776 INFO kneeclf: hog_pca_hgb on val: roc_auc=0.8093 recall=0.8522 specificity=0.5343 f2=0.7745
+2026-11-11 11:40:35,857 INFO kneeclf: selected hog_svc (by val_roc_auc on validation); threshold -0.2003
+2026-11-11 11:41:24,607 INFO kneeclf: TEST hog_svc: {'n': 1656, 'threshold': -0.2003, 'accuracy': 0.7566, 'balanced_accuracy': 0.7651, 'precision': 0.6807, 'recall': 0.8308, 'specificity': 0.6995, 'f1': 0.7483, 'f2': 0.7957, 'roc_auc': 0.8612, 'pr_auc': 0.8536}
+2026-11-11 11:41:24,607 INFO kneeclf: TEST confusion matrix: {'tn': 654, 'fp': 281, 'fn': 122, 'tp': 599}
+2026-11-11 11:41:50,616 INFO kneeclf: done in 2188.0s; outputs in runs/20261111-110522-645381
