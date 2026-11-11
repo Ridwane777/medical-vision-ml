@@ -1,0 +1,597 @@
+{
+  "n_documents": 994,
+  "language": "en",
+  "core_tfidf_svd": {
+    "algorithm": "kmeans",
+    "n_clusters": 18,
+    "noise_ratio": 0.0,
+    "silhouette": 0.1248,
+    "calinski_harabasz": 15.5398,
+    "davies_bouldin": 3.4761,
+    "params": {
+      "k": 18,
+      "k_range": [
+        2,
+        20
+      ],
+      "n_init": 10
+    },
+    "candidates": {
+      "kmeans": {
+        "n_clusters": 18,
+        "noise_ratio": 0.0,
+        "eligible": true,
+        "silhouette": 0.12484525507497388,
+        "calinski_harabasz": 15.53982377171597,
+        "davies_bouldin": 3.4761335672087,
+        "k": 18,
+        "k_range": [
+          2,
+          20
+        ],
+        "n_init": 10
+      },
+      "hdbscan": {
+        "n_clusters": 3,
+        "noise_ratio": 0.7716,
+        "eligible": false,
+        "silhouette": 0.16094333010329748,
+        "calinski_harabasz": 16.07290641913423,
+        "davies_bouldin": 2.8297492927297547,
+        "min_cluster_size": 20
+      }
+    },
+    "k_curve": [
+      {
+        "k": 2,
+        "inertia": 916.4831,
+        "silhouette": 0.0486,
+        "calinski_harabasz": 26.3842,
+        "davies_bouldin": 6.1255
+      },
+      {
+        "k": 3,
+        "inertia": 895.4312,
+        "silhouette": 0.0615,
+        "calinski_harabasz": 25.138,
+        "davies_bouldin": 5.1008
+      },
+      {
+        "k": 4,
+        "inertia": 876.6975,
+        "silhouette": 0.069,
+        "calinski_harabasz": 24.1511,
+        "davies_bouldin": 4.8321
+      },
+      {
+        "k": 5,
+        "inertia": 859.5758,
+        "silhouette": 0.0753,
+        "calinski_harabasz": 23.3804,
+        "davies_bouldin": 4.433
+      },
+      {
+        "k": 6,
+        "inertia": 844.4632,
+        "silhouette": 0.0826,
+        "calinski_harabasz": 22.5561,
+        "davies_bouldin": 4.1221
+      },
+      {
+        "k": 7,
+        "inertia": 831.9559,
+        "silhouette": 0.092,
+        "calinski_harabasz": 21.533,
+        "davies_bouldin": 3.9841
+      },
+      {
+        "k": 8,
+        "inertia": 821.0137,
+        "silhouette": 0.0979,
+        "calinski_harabasz": 20.5612,
+        "davies_bouldin": 3.8613
+      },
+      {
+        "k": 9,
+        "inertia": 811.0116,
+        "silhouette": 0.0984,
+        "calinski_harabasz": 19.713,
+        "davies_bouldin": 3.9327
+      },
+      {
+        "k": 10,
+        "inertia": 799.861,
+        "silhouette": 0.1059,
+        "calinski_harabasz": 19.273,
+        "davies_bouldin": 3.6019
+      },
+      {
+        "k": 11,
+        "inertia": 792.7425,
+        "silhouette": 0.1038,
+        "calinski_harabasz": 18.3664,
+        "davies_bouldin": 3.7953
+      },
+      {
+        "k": 12,
+        "inertia": 780.7581,
+        "silhouette": 0.115,
+        "calinski_harabasz": 18.3061,
+        "davies_bouldin": 3.6275
+      },
+      {
+        "k": 13,
+        "inertia": 772.2825,
+        "silhouette": 0.1197,
+        "calinski_harabasz": 17.8446,
+        "davies_bouldin": 3.5925
+      },
+      {
+        "k": 14,
+        "inertia": 766.2332,
+        "silhouette": 0.1164,
+        "calinski_harabasz": 17.1803,
+        "davies_bouldin": 3.5987
+      },
+      {
+        "k": 15,
+        "inertia": 757.667,
+        "silhouette": 0.122,
+        "calinski_harabasz": 16.9076,
+        "davies_bouldin": 3.4453
+      },
+      {
+        "k": 16,
+        "inertia": 751.459,
+        "silhouette": 0.123,
+        "calinski_harabasz": 16.4332,
+        "davies_bouldin": 3.525
+      },
+      {
+        "k": 17,
+        "inertia": 748.1483,
+        "silhouette": 0.1161,
+        "calinski_harabasz": 15.7287,
+        "davies_bouldin": 3.3671
+      },
+      {
+        "k": 18,
+        "inertia": 740.4412,
+        "silhouette": 0.1248,
+        "calinski_harabasz": 15.5398,
+        "davies_bouldin": 3.4761
+      },
+      {
+        "k": 19,
+        "inertia": 736.2915,
+        "silhouette": 0.1194,
+        "calinski_harabasz": 15.0494,
+        "davies_bouldin": 3.4131
+      },
+      {
+        "k": 20,
+        "inertia": 729.157,
+        "silhouette": 0.1247,
+        "calinski_harabasz": 14.8836,
+        "davies_bouldin": 3.3637
+      }
+    ],
+    "cluster_sizes": {
+      "0": 47,
+      "1": 54,
+      "2": 96,
+      "3": 29,
+      "4": 46,
+      "5": 66,
+      "6": 51,
+      "7": 60,
+      "8": 57,
+      "9": 46,
+      "10": 64,
+      "11": 30,
+      "12": 59,
+      "13": 92,
+      "14": 57,
+      "15": 72,
+      "16": 41,
+      "17": 27
+    },
+    "seconds": 6.6,
+    "features": {
+      "min_df": 2,
+      "max_df": 0.8,
+      "ngram_range": [
+        1,
+        1
+      ],
+      "n_features": 1271,
+      "svd_components": 100,
+      "svd_explained_variance": 0.4149,
+      "stop_words": "336 words"
+    }
+  },
+  "all-MiniLM-L6-v2": {
+    "algorithm": "kmeans",
+    "n_clusters": 4,
+    "noise_ratio": 0.0,
+    "silhouette": 0.1685,
+    "calinski_harabasz": 71.205,
+    "davies_bouldin": 2.9137,
+    "params": {
+      "k": 4,
+      "k_range": [
+        2,
+        20
+      ],
+      "n_init": 10
+    },
+    "candidates": {
+      "kmeans": {
+        "n_clusters": 4,
+        "noise_ratio": 0.0,
+        "eligible": true,
+        "silhouette": 0.1685331223246843,
+        "calinski_harabasz": 71.20503912009109,
+        "davies_bouldin": 2.913712667633459,
+        "k": 4,
+        "k_range": [
+          2,
+          20
+        ],
+        "n_init": 10
+      },
+      "hdbscan": {
+        "n_clusters": 4,
+        "noise_ratio": 0.6952,
+        "eligible": false,
+        "silhouette": 0.25481236524160833,
+        "calinski_harabasz": 25.122979420970918,
+        "davies_bouldin": 1.8722087182154454,
+        "min_cluster_size": 20
+      }
+    },
+    "k_curve": [
+      {
+        "k": 2,
+        "inertia": 671.3878,
+        "silhouette": 0.1487,
+        "calinski_harabasz": 87.8258,
+        "davies_bouldin": 3.3477
+      },
+      {
+        "k": 3,
+        "inertia": 631.6617,
+        "silhouette": 0.1661,
+        "calinski_harabasz": 77.7903,
+        "davies_bouldin": 2.8261
+      },
+      {
+        "k": 4,
+        "inertia": 601.1226,
+        "silhouette": 0.1685,
+        "calinski_harabasz": 71.205,
+        "davies_bouldin": 2.9137
+      },
+      {
+        "k": 5,
+        "inertia": 580.0798,
+        "silhouette": 0.1637,
+        "calinski_harabasz": 64.2543,
+        "davies_bouldin": 2.7086
+      },
+      {
+        "k": 6,
+        "inertia": 563.5115,
+        "silhouette": 0.1627,
+        "calinski_harabasz": 58.6711,
+        "davies_bouldin": 2.8239
+      },
+      {
+        "k": 7,
+        "inertia": 548.5318,
+        "silhouette": 0.1528,
+        "calinski_harabasz": 54.6692,
+        "davies_bouldin": 2.7642
+      },
+      {
+        "k": 8,
+        "inertia": 536.6462,
+        "silhouette": 0.1533,
+        "calinski_harabasz": 50.9683,
+        "davies_bouldin": 2.7917
+      },
+      {
+        "k": 9,
+        "inertia": 525.8435,
+        "silhouette": 0.1565,
+        "calinski_harabasz": 47.9968,
+        "davies_bouldin": 2.7658
+      },
+      {
+        "k": 10,
+        "inertia": 515.6229,
+        "silhouette": 0.1596,
+        "calinski_harabasz": 45.6325,
+        "davies_bouldin": 2.7639
+      },
+      {
+        "k": 11,
+        "inertia": 508.3604,
+        "silhouette": 0.1515,
+        "calinski_harabasz": 43.0179,
+        "davies_bouldin": 2.7907
+      },
+      {
+        "k": 12,
+        "inertia": 501.2291,
+        "silhouette": 0.1538,
+        "calinski_harabasz": 40.8934,
+        "davies_bouldin": 2.8826
+      },
+      {
+        "k": 13,
+        "inertia": 494.907,
+        "silhouette": 0.1538,
+        "calinski_harabasz": 38.9701,
+        "davies_bouldin": 2.9357
+      },
+      {
+        "k": 14,
+        "inertia": 489.2172,
+        "silhouette": 0.1541,
+        "calinski_harabasz": 37.2304,
+        "davies_bouldin": 2.9956
+      },
+      {
+        "k": 15,
+        "inertia": 485.1807,
+        "silhouette": 0.15,
+        "calinski_harabasz": 35.4049,
+        "davies_bouldin": 2.9624
+      },
+      {
+        "k": 16,
+        "inertia": 482.5132,
+        "silhouette": 0.1471,
+        "calinski_harabasz": 33.5538,
+        "davies_bouldin": 3.1163
+      },
+      {
+        "k": 17,
+        "inertia": 479.3289,
+        "silhouette": 0.1375,
+        "calinski_harabasz": 32.0389,
+        "davies_bouldin": 3.0542
+      },
+      {
+        "k": 18,
+        "inertia": 475.6451,
+        "silhouette": 0.1509,
+        "calinski_harabasz": 30.8014,
+        "davies_bouldin": 3.0889
+      },
+      {
+        "k": 19,
+        "inertia": 472.7645,
+        "silhouette": 0.1471,
+        "calinski_harabasz": 29.5675,
+        "davies_bouldin": 3.0687
+      },
+      {
+        "k": 20,
+        "inertia": 471.0025,
+        "silhouette": 0.1394,
+        "calinski_harabasz": 28.279,
+        "davies_bouldin": 3.1291
+      }
+    ],
+    "cluster_sizes": {
+      "0": 238,
+      "1": 278,
+      "2": 290,
+      "3": 188
+    },
+    "ari_vs_core": 0.2364,
+    "nmi_vs_core": 0.5077,
+    "embedding_dims": 384,
+    "parameters": 22713216,
+    "weights_mb_fp32": 86.6,
+    "load_seconds": 7.8,
+    "encode_seconds": 25.3,
+    "selection_seconds": 12.0
+  },
+  "paraphrase-multilingual-MiniLM-L12-v2": {
+    "algorithm": "kmeans",
+    "n_clusters": 3,
+    "noise_ratio": 0.0,
+    "silhouette": 0.1929,
+    "calinski_harabasz": 92.4804,
+    "davies_bouldin": 2.6844,
+    "params": {
+      "k": 3,
+      "k_range": [
+        2,
+        20
+      ],
+      "n_init": 10
+    },
+    "candidates": {
+      "kmeans": {
+        "n_clusters": 3,
+        "noise_ratio": 0.0,
+        "eligible": true,
+        "silhouette": 0.1928760957235013,
+        "calinski_harabasz": 92.48035619320382,
+        "davies_bouldin": 2.684431358156157,
+        "k": 3,
+        "k_range": [
+          2,
+          20
+        ],
+        "n_init": 10
+      },
+      "hdbscan": {
+        "n_clusters": 3,
+        "noise_ratio": 0.7123,
+        "eligible": false,
+        "silhouette": 0.3642455594083331,
+        "calinski_harabasz": 54.1692827326906,
+        "davies_bouldin": 1.6418816899305082,
+        "min_cluster_size": 20
+      }
+    },
+    "k_curve": [
+      {
+        "k": 2,
+        "inertia": 574.9129,
+        "silhouette": 0.1807,
+        "calinski_harabasz": 111.0025,
+        "davies_bouldin": 2.9603
+      },
+      {
+        "k": 3,
+        "inertia": 538.7009,
+        "silhouette": 0.1929,
+        "calinski_harabasz": 92.4804,
+        "davies_bouldin": 2.6844
+      },
+      {
+        "k": 4,
+        "inertia": 512.1756,
+        "silhouette": 0.1806,
+        "calinski_harabasz": 81.8717,
+        "davies_bouldin": 2.854
+      },
+      {
+        "k": 5,
+        "inertia": 497.2544,
+        "silhouette": 0.1492,
+        "calinski_harabasz": 70.6017,
+        "davies_bouldin": 2.6955
+      },
+      {
+        "k": 6,
+        "inertia": 483.7867,
+        "silhouette": 0.1269,
+        "calinski_harabasz": 63.4958,
+        "davies_bouldin": 2.8208
+      },
+      {
+        "k": 7,
+        "inertia": 470.6102,
+        "silhouette": 0.1369,
+        "calinski_harabasz": 58.9454,
+        "davies_bouldin": 2.6431
+      },
+      {
+        "k": 8,
+        "inertia": 461.3684,
+        "silhouette": 0.1565,
+        "calinski_harabasz": 54.306,
+        "davies_bouldin": 2.7186
+      },
+      {
+        "k": 9,
+        "inertia": 450.9618,
+        "silhouette": 0.1485,
+        "calinski_harabasz": 51.4063,
+        "davies_bouldin": 2.7538
+      },
+      {
+        "k": 10,
+        "inertia": 440.9528,
+        "silhouette": 0.155,
+        "calinski_harabasz": 49.166,
+        "davies_bouldin": 2.6828
+      },
+      {
+        "k": 11,
+        "inertia": 435.089,
+        "silhouette": 0.1541,
+        "calinski_harabasz": 46.125,
+        "davies_bouldin": 2.7994
+      },
+      {
+        "k": 12,
+        "inertia": 430.5193,
+        "silhouette": 0.1548,
+        "calinski_harabasz": 43.2813,
+        "davies_bouldin": 2.8295
+      },
+      {
+        "k": 13,
+        "inertia": 423.3046,
+        "silhouette": 0.1536,
+        "calinski_harabasz": 41.703,
+        "davies_bouldin": 2.8261
+      },
+      {
+        "k": 14,
+        "inertia": 419.167,
+        "silhouette": 0.1438,
+        "calinski_harabasz": 39.5796,
+        "davies_bouldin": 2.8619
+      },
+      {
+        "k": 15,
+        "inertia": 414.0877,
+        "silhouette": 0.1381,
+        "calinski_harabasz": 38.023,
+        "davies_bouldin": 2.8817
+      },
+      {
+        "k": 16,
+        "inertia": 412.0501,
+        "silhouette": 0.1512,
+        "calinski_harabasz": 35.9497,
+        "davies_bouldin": 2.8061
+      },
+      {
+        "k": 17,
+        "inertia": 407.131,
+        "silhouette": 0.1481,
+        "calinski_harabasz": 34.8129,
+        "davies_bouldin": 2.9169
+      },
+      {
+        "k": 18,
+        "inertia": 403.2369,
+        "silhouette": 0.1525,
+        "calinski_harabasz": 33.6021,
+        "davies_bouldin": 2.9336
+      },
+      {
+        "k": 19,
+        "inertia": 399.499,
+        "silhouette": 0.1458,
+        "calinski_harabasz": 32.5062,
+        "davies_bouldin": 2.8435
+      },
+      {
+        "k": 20,
+        "inertia": 399.1141,
+        "silhouette": 0.139,
+        "calinski_harabasz": 30.8429,
+        "davies_bouldin": 2.8307
+      }
+    ],
+    "cluster_sizes": {
+      "0": 279,
+      "1": 521,
+      "2": 194
+    },
+    "ari_vs_core": 0.142,
+    "nmi_vs_core": 0.4214,
+    "embedding_dims": 384,
+    "parameters": 117653760,
+    "weights_mb_fp32": 448.8,
+    "load_seconds": 17.4,
+    "encode_seconds": 56.0,
+    "selection_seconds": 19.8
+  },
+  "environment": {
+    "torch": "2.15.0+cpu",
+    "threads": 2,
+    "device": "cpu"
+  }
+}

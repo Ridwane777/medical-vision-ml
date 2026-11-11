@@ -38,10 +38,10 @@ November 2026).
 
 | Alternative | Preferable when | Cost |
 | --- | --- | --- |
-| CNN or transfer learning (e.g. ImageNet-pretrained ResNet fine-tuned on KL grades) | the library policy allows PyTorch or TensorFlow, and a ROC-AUC well above the 0.861 baseline is the goal | a GPU (or hours of CPU per epoch), a new dependency, less interpretable features, more care against overfitting on 4,892 train images |
+| CNN or transfer learning (e.g. ImageNet-pretrained ResNet fine-tuned on KL grades) | the library policy allows PyTorch or TensorFlow, a GPU is available for fine-tuning, and a ROC-AUC well above the 0.861 baseline is the goal | **Measured** ([beyond_scope](../../beyond_scope/README.md)): *frozen* ResNet-50 + LogReg reaches test ROC-AUC 0.835, recall 0.813, specificity 0.665, below HOG + SVC. Embedding 7,374 images took 1,762 s on 4 CPU threads (EfficientNet-B0: 716 s). Fine-tuning was not run: one forward pass over train alone took 20 min on CPU |
 | HOG + LogReg instead of HOG + SVC | inference cost or model size matters (the SVC pickle is about 200 MB) | -0.004 validation ROC-AUC, -0.029 validation specificity at the same recall |
 | Full 224 px resolution | RAM >= 16 GB and run time are not limiting | about 4 times more pixels, 26,244 HOG dims, longer searches |
-| Sentence embeddings for testimonies | a pretrained embedding library is allowed | a large model download, less transparent clusters than TF-IDF terms |
+| Sentence embeddings for testimonies | a pretrained embedding library is allowed | **Measured** ([beyond_scope](../../beyond_scope/README.md)): all-MiniLM-L6-v2 (86.6 MB) gives k = 4, silhouette 0.169 in its own space, ARI 0.236 vs the core's k = 18. Multilingual MiniLM-L12 (448.8 MB) gives k = 3, silhouette 0.193, ARI 0.142. Coarser themes, 37 to 76 s vs 6.6 s, and no labels to say which partition is better |
 | Stemming / lemmatization | allowed library (e.g. NLTK) or a small hand-written stemmer is worth the time | language-specific rules; would merge `breath` / `breathing` |
 
 ## Organisation

@@ -133,6 +133,15 @@ PYTHONPATH=src python -m textclust path/to/file.csv [--text-column C] [--label-c
 
 Each run writes `runs/<timestamp>/metrics.json` plus plots (git-ignored). The design decision is recorded in [ADR-0001](docs/adr/0001-adaptive-clustering-pipeline.md).
 
+## Beyond the specification
+
+[`beyond_scope/`](beyond_scope/README.md) measures what the libraries forbidden by the specification would bring. It
+reuses the core's protocol, and the core never imports from it ([ADR-0004](docs/adr/0004-beyond-scope-separation.md)).
+- Frozen ImageNet ResNet-50 + LogReg on knees: test ROC-AUC 0.835, recall 0.813, specificity 0.665. That is **below**
+  HOG + SVC (0.861 / 0.831 / 0.700). Fine-tuning was not run because it is too slow on CPU.
+- Sentence embeddings (MiniLM) on testimonies: K-Means picks k = 3 to 4 broad themes, silhouette 0.17 to 0.19 in
+  their own space (not comparable with 0.125), and ARI 0.14 to 0.24 against the core's k = 18 partition.
+
 ## Data
 
 Datasets are not stored in this repository. Download them and place them as follows (paths are relative to the folder of each notebook, so launch Jupyter from the repository root and open the notebooks in place).

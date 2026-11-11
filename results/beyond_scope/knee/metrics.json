@@ -1,0 +1,155 @@
+{
+  "protocol": "kl01_vs_2to4, balanced train, threshold for recall 0.85 on val, test once",
+  "environment": {
+    "torch": "2.15.0+cpu",
+    "torchvision": "0.29.2+cpu",
+    "threads": 4,
+    "device": "cpu"
+  },
+  "data_profile": {
+    "train": {
+      "split": "train",
+      "files_found": 5778,
+      "grades_found": {
+        "0": 2286,
+        "1": 1046,
+        "2": 1516,
+        "3": 757,
+        "4": 173
+      },
+      "kept": 4892,
+      "grades_kept": {
+        "0": 1689,
+        "1": 757,
+        "2": 1516,
+        "3": 757,
+        "4": 173
+      },
+      "labels_kept": {
+        "0": 2446,
+        "1": 2446
+      },
+      "balanced": true,
+      "max_per_class": null,
+      "side": 224,
+      "memory_mb": 936.4
+    },
+    "val": {
+      "split": "val",
+      "files_found": 826,
+      "grades_found": {
+        "0": 328,
+        "1": 153,
+        "2": 212,
+        "3": 106,
+        "4": 27
+      },
+      "kept": 826,
+      "grades_kept": {
+        "0": 328,
+        "1": 153,
+        "2": 212,
+        "3": 106,
+        "4": 27
+      },
+      "labels_kept": {
+        "0": 481,
+        "1": 345
+      },
+      "balanced": false,
+      "max_per_class": null,
+      "side": 224,
+      "memory_mb": 158.1
+    },
+    "test": {
+      "split": "test",
+      "files_found": 1656,
+      "grades_found": {
+        "0": 639,
+        "1": 296,
+        "2": 447,
+        "3": 223,
+        "4": 51
+      },
+      "kept": 1656,
+      "grades_kept": {
+        "0": 639,
+        "1": 296,
+        "2": 447,
+        "3": 223,
+        "4": 51
+      },
+      "labels_kept": {
+        "0": 935,
+        "1": 721
+      },
+      "balanced": false,
+      "max_per_class": null,
+      "side": 224,
+      "memory_mb": 317.0
+    }
+  },
+  "backbones": {
+    "resnet50": {
+      "parameters": 23508032,
+      "weights_mb_fp32": 89.7,
+      "embedding_dims": 2048
+    },
+    "efficientnet_b0": {
+      "parameters": 4007548,
+      "weights_mb_fp32": 15.3,
+      "embedding_dims": 1280
+    }
+  },
+  "selected": {
+    "candidate": "resnet50_logreg",
+    "best_params": {
+      "logreg__C": 0.001
+    },
+    "threshold": -0.5395370125770569
+  },
+  "validation": {
+    "n": 826,
+    "threshold": -0.5395,
+    "accuracy": 0.7203,
+    "balanced_accuracy": 0.739,
+    "precision": 0.6203,
+    "recall": 0.8522,
+    "specificity": 0.6258,
+    "f1": 0.7179,
+    "f2": 0.7929,
+    "roc_auc": 0.8394,
+    "pr_auc": 0.809,
+    "confusion_matrix": {
+      "tn": 301,
+      "fp": 180,
+      "fn": 51,
+      "tp": 294
+    }
+  },
+  "test": {
+    "n": 1656,
+    "threshold": -0.5395,
+    "accuracy": 0.7295,
+    "balanced_accuracy": 0.739,
+    "precision": 0.6518,
+    "recall": 0.8128,
+    "specificity": 0.6652,
+    "f1": 0.7235,
+    "f2": 0.7745,
+    "roc_auc": 0.8352,
+    "pr_auc": 0.8205,
+    "confusion_matrix": {
+      "tn": 622,
+      "fp": 313,
+      "fn": 135,
+      "tp": 586
+    }
+  },
+  "timings": {
+    "load_seconds": 61.6,
+    "embed_resnet50_seconds": 1761.7,
+    "embed_efficientnet_b0_seconds": 715.7,
+    "total_seconds": 3018.6
+  }
+}

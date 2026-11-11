@@ -1,0 +1,9 @@
+# Beyond-scope experiments only (NOT allowed by the project specification). Core: ../requirements.txt
+torch>=2.5
+torchvision>=0.20
+sentence-transformers>=3.0
+numpy
+pandas
+matplotlib
+scikit-learn
+pillow

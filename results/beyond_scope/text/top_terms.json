@@ -1,0 +1,258 @@
+{
+  "core_tfidf_svd": {
+    "0": [
+      "hot",
+      "blister",
+      "touched",
+      "small",
+      "red",
+      "skin",
+      "hand",
+      "swollen"
+    ],
+    "1": [
+      "felt",
+      "nose",
+      "throat",
+      "mild",
+      "day",
+      "congestion",
+      "cold",
+      "headache"
+    ],
+    "2": [
+      "especially",
+      "feel",
+      "vision",
+      "feeling",
+      "night",
+      "eye",
+      "notice",
+      "gums"
+    ],
+    "3": [
+      "ankle",
+      "heel",
+      "toes",
+      "sore",
+      "uneven",
+      "squeeze",
+      "walking",
+      "inner"
+    ],
+    "4": [
+      "breath",
+      "breathing",
+      "short",
+      "catch",
+      "cough",
+      "walking",
+      "cold",
+      "air"
+    ],
+    "5": [
+      "itchy",
+      "rash",
+      "new",
+      "hives",
+      "raised",
+      "spots",
+      "welts",
+      "spread"
+    ],
+    "6": [
+      "feel",
+      "pale",
+      "headaches",
+      "skin",
+      "looks",
+      "dizzy",
+      "heart",
+      "notice"
+    ],
+    "7": [
+      "ear",
+      "pain",
+      "fever",
+      "hear",
+      "cold",
+      "slight",
+      "right",
+      "hearing"
+    ],
+    "8": [
+      "wrist",
+      "elbow",
+      "forearm",
+      "hand",
+      "palm",
+      "feels",
+      "finger",
+      "brings"
+    ],
+    "9": [
+      "shoulder",
+      "reaching",
+      "arm",
+      "overhead",
+      "makes",
+      "lifting",
+      "pull",
+      "ache"
+    ],
+    "10": [
+      "chest",
+      "tightness",
+      "tight",
+      "pressure",
+      "feel",
+      "breathe",
+      "feeling",
+      "wheeze"
+    ],
+    "11": [
+      "knee",
+      "sitting",
+      "going",
+      "feels",
+      "downstairs",
+      "straighten",
+      "thigh",
+      "inside"
+    ],
+    "12": [
+      "pain",
+      "head",
+      "starts",
+      "throbbing",
+      "feel",
+      "gets",
+      "eyes",
+      "pressure"
+    ],
+    "13": [
+      "deep",
+      "ache",
+      "makes",
+      "hip",
+      "leg",
+      "long",
+      "gives",
+      "groin"
+    ],
+    "14": [
+      "cough",
+      "throat",
+      "dry",
+      "days",
+      "nose",
+      "fever",
+      "clear",
+      "mild"
+    ],
+    "15": [
+      "skin",
+      "red",
+      "tiny",
+      "blisters",
+      "feels",
+      "sun",
+      "small",
+      "like"
+    ],
+    "16": [
+      "blood",
+      "doctor",
+      "sugar",
+      "high",
+      "pressure",
+      "losing",
+      "feel",
+      "weight"
+    ],
+    "17": [
+      "foot",
+      "toe",
+      "shoes",
+      "pushing",
+      "big",
+      "uncomfortable",
+      "brisk",
+      "middle"
+    ]
+  },
+  "all-MiniLM-L6-v2": {
+    "0": [
+      "feel",
+      "vision",
+      "pain",
+      "notice",
+      "feeling",
+      "doctor",
+      "pressure",
+      "blood"
+    ],
+    "1": [
+      "cough",
+      "throat",
+      "cold",
+      "ear",
+      "felt",
+      "mild",
+      "fever",
+      "chest"
+    ],
+    "2": [
+      "ache",
+      "makes",
+      "feels",
+      "gives",
+      "deep",
+      "sore",
+      "shoulder",
+      "sharp"
+    ],
+    "3": [
+      "itchy",
+      "hot",
+      "rash",
+      "skin",
+      "red",
+      "blister",
+      "new",
+      "small"
+    ]
+  },
+  "paraphrase-multilingual-MiniLM-L12-v2": {
+    "0": [
+      "ache",
+      "makes",
+      "feels",
+      "deep",
+      "gives",
+      "sore",
+      "shoulder",
+      "outer"
+    ],
+    "1": [
+      "feel",
+      "pain",
+      "cold",
+      "ear",
+      "cough",
+      "throat",
+      "chest",
+      "felt"
+    ],
+    "2": [
+      "itchy",
+      "skin",
+      "hot",
+      "rash",
+      "red",
+      "blister",
+      "new",
+      "small"
+    ]
+  }
+}

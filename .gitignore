@@ -15,3 +15,6 @@ venv/
 runs/
 __pycache__/
 results/**/model.pkl
+
+# beyond_scope caches (embeddings, weights)
+*.npy
