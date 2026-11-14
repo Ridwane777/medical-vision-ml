@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medical Vision ML demo</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Knee X-ray osteoarthritis score (HOG + logistic regression) and CSV text clustering, running entirely in your browser.">
+<style>
+  :root { --bg: #ffffff; --fg: #1d2330; --muted: #5b6475; --line: #d9dee7; --accent: #2e6fd8; --warn: #c0392b; --ok: #2e86c1; --card: #f6f8fb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12161d; --fg: #e6e9ef; --muted: #9aa3b2; --line: #2b3240; --accent: #6ea1ff; --warn: #ff7a6b; --ok: #5fb1ec; --card: #1a1f29; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; font-size: 1.7rem; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px; flex-wrap: wrap; }
+  nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; font: inherit; color: var(--muted); cursor: pointer; }
+  nav button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+  section[hidden] { display: none; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .examples button { padding: 0; border: 2px solid var(--line); border-radius: 6px; background: none; cursor: pointer; text-align: center; color: var(--muted); font-size: 0.75rem; }
+  .examples button:hover, .examples button:focus-visible { border-color: var(--accent); }
+  .examples img { display: block; width: 72px; height: 72px; border-radius: 4px 4px 0 0; }
+  .gauge { position: relative; height: 22px; background: var(--line); border-radius: 4px; margin: 12px 0 28px; }
+  .gauge .bar { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .gauge .thr { position: absolute; top: -4px; bottom: -4px; border-left: 2px dashed var(--fg); }
+  .gauge .thr span { position: absolute; top: 100%; transform: translateX(-50%); font-size: 0.75rem; white-space: nowrap; color: var(--muted); }
+  .verdict { font-size: 1.15rem; margin: 0; }
+  canvas { width: 100%; max-width: 224px; image-rendering: pixelated; background: #000; border-radius: 4px; }
+  .canvases { display: flex; gap: 12px; flex-wrap: wrap; }
+  .canvases figure { margin: 0; flex: 1 1 160px; }
+  figcaption { font-size: 0.8rem; color: var(--muted); }
+  .disclaimer { margin-top: 20px; border-left: 4px solid var(--warn); padding: 10px 14px; background: var(--card); }
+  .loading { color: var(--muted); padding: 16px; border: 1px dashed var(--line); border-radius: 10px; }
+  a { color: var(--accent); }
+  input[type=file] { max-width: 100%; }
+  .btn { font: inherit; padding: 8px 14px; margin: 10px 8px 0 0; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tbl { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  .tbl th, .tbl td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  img.plot { width: 100%; background: #fff; border-radius: 6px; }
+  figure { margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Medical Vision ML</h1>
+  <p class="sub">Classical machine-learning demos, running entirely in your browser: nothing you upload leaves your computer.</p>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-tab="knee">Knee X-ray</button>
+    <button role="tab" aria-selected="false" data-tab="texts">Cluster your texts</button>
+    <button role="tab" aria-selected="false" data-tab="about">About</button>
+  </nav>
+
+  <section id="knee">
+    <div class="grid">
+      <div class="card">
+        <label for="file"><strong>Knee X-ray (PNG/JPG)</strong></label><br>
+        <input id="file" type="file" accept="image/*">
+        <p style="margin:12px 0 0">Or pick a test-split example (file name = true KL grade):</p>
+        <div class="examples" id="examples"></div>
+      </div>
+      <div class="card" aria-live="polite">
+        <p class="verdict" id="verdict">Loading the model...</p>
+        <div class="gauge" id="gauge" hidden><div class="bar" id="bar"></div><div class="thr" id="thr"><span id="thrlabel"></span></div></div>
+        <p id="detail" style="margin:0;color:var(--muted)"></p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="canvases">
+        <figure><canvas id="cin" width="112" height="112"></canvas><figcaption id="cincap">model input</figcaption></figure>
+        <figure><canvas id="chog" width="448" height="448"></canvas><figcaption id="chogcap">HOG cells</figcaption></figure>
+      </div>
+    </div>
+    <p class="disclaimer" id="disclaimer"></p>
+  </section>
+
+  <section id="texts" hidden>
+    <p class="loading" id="pystatus" aria-live="polite">The first time you open this tab, your browser downloads a Python runtime (Pyodide)
+      with pandas, scikit-learn and matplotlib, then loads the project's clustering code. This downloads about 23 MB and
+      takes from about 30 s to 2-3 minutes depending on your connection and computer; later visits use the browser cache.
+      The knee tab does not need it.</p>
+    <div class="card">
+      <p style="margin-top:0">Upload a CSV with one short text per row (max 2000 rows, 2 MB). Delimiter, header, text column and
+        language are detected. The file stays in your browser.</p>
+      <input id="csv" type="file" accept=".csv,.tsv,.txt">
+      <button type="button" class="btn" id="sample">Use the synthetic sample (150 symptom descriptions, 5 topics)</button>
+      <button type="button" class="btn primary" id="runcluster" disabled>Cluster</button>
+      <p id="csvname" style="color:var(--muted);margin-bottom:0"></p>
+    </div>
+    <div id="clusterout" aria-live="polite"></div>
+  </section>
+
+  <section id="about" hidden>
+    <h2>About</h2>
+    <ul>
+      <li><strong>Knee X-ray classifier</strong>: a hand-written HOG descriptor + standardization + logistic regression separates
+        KL 0-1 from KL 2-4 (radiographic osteoarthritis). The decision threshold is set on the validation split for 85% recall,
+        then the test split is used once. This page runs the light demo model (a JSON file of plain numbers) with a small
+        JavaScript port of the Python predictor; the repository's tests check that both give the same score. The full study's
+        best model (HOG + SVC) reaches test ROC-AUC 0.861 but weighs 200 MB.</li>
+      <li><strong>Text clustering</strong>: TF-IDF + truncated SVD, then K-Means or HDBSCAN chosen automatically by silhouette,
+        with automatic detection of the delimiter, header, text column and language. It runs the project's own Python code in
+        the browser with <a href="https://pyodide.org/">Pyodide</a> 314.0.7 (Python 3.14, scikit-learn 1.8.0,
+        pandas 3.0.2): the first visit to that tab downloads the runtime (about 23 MB, 30 s to 2-3 minutes).</li>
+    </ul>
+    <p>Source code, notebooks, model card and data cards:
+      <a href="https://github.com/Ridwane777/medical-vision-ml">github.com/Ridwane777/medical-vision-ml</a>
+      (<a href="https://github.com/Ridwane777/medical-vision-ml/blob/main/docs/model-card.md">model card</a>).</p>
+    <p>Example X-rays: Chen, P. (2018), <em>Knee Osteoarthritis Severity Grading Dataset</em>, Mendeley Data,
+      doi:10.17632/56rmx5bjcr.1, CC BY 4.0. The text sample is synthetic (no real patient text).</p>
+    <p id="modelinfo"></p>
+  </section>
+</main>
+
+<script src="knee.js"></script>
+<script>
+"use strict";
+const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const TEXTCLUST = ["__init__", "clean", "features", "io", "model", "pipeline", "report"];
+const EXAMPLES = ["kl0_9003815R", "kl1_9008934R", "kl1_9018291L", "kl2_9008884L", "kl3_9037494L", "kl4_9101066R"];
+let MODEL = null;
+const $ = (id) => document.getElementById(id);
+
+// Tabs; the Python runtime is only downloaded when the clustering tab is opened.
+let pyReady = null;
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  document.querySelectorAll("main > section").forEach((s) => { s.hidden = s.id !== b.dataset.tab; });
+  if (b.dataset.tab === "texts" && !pyReady) pyReady = startPython();
+}));
+
+function loadScript(src) {
+  return new Promise((ok, ko) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok; s.onerror = () => ko(new Error("cannot load " + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function fetchText(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+  return r.text();
+}
+
+async function startPython() {
+  const status = $("pystatus");
+  try {
+    const t0 = performance.now();
+    await loadScript(PYODIDE + "pyodide.js");
+    const py = await loadPyodide({ indexURL: PYODIDE });
+    status.textContent = "Python is running in your browser; loading numpy, pandas, scikit-learn and matplotlib...";
+    await py.loadPackage(["numpy", "pandas", "scikit-learn", "matplotlib"]);
+    py.FS.mkdirTree("/home/pyodide/textclust");
+    for (const m of TEXTCLUST) py.FS.writeFile(`/home/pyodide/textclust/${m}.py`, await fetchText(`assets/py/textclust/${m}.py`));
+    py.FS.writeFile("/home/pyodide/cluster_app.py", await fetchText("cluster_app.py"));
+    py.FS.writeFile("/home/pyodide/sample_texts.csv", await fetchText("assets/examples/sample_texts.csv"));
+    await py.runPythonAsync("import sys; sys.path.insert(0, '/home/pyodide'); import cluster_app");
+    status.textContent = `Python ready (Pyodide ${py.version}, loaded in ${((performance.now() - t0) / 1000).toFixed(0)} s). ` +
+      "Pick a file or the sample, then press Cluster.";
+    updateRunButton();
+    return py;
+  } catch (e) {
+    status.textContent = `Python could not be started in this browser: ${e.message || e}`;
+    throw e;
+  }
+}
+
+let csvChoice = null;  // {name, text}
+function updateRunButton() { $("runcluster").disabled = !csvChoice; }
+$("csv").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  csvChoice = { name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) };
+  $("csvname").textContent = `Selected: ${f.name}`;
+  updateRunButton();
+});
+$("sample").addEventListener("click", () => {
+  csvChoice = { name: "sample_texts.csv", sample: true };
+  $("csvname").textContent = "Selected: sample_texts.csv (synthetic)";
+  updateRunButton();
+});
+
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+$("runcluster").addEventListener("click", async () => {
+  const out = $("clusterout");
+  if (!csvChoice) return;
+  $("runcluster").disabled = true;
+  out.innerHTML = '<p class="loading">Clustering... (waiting for Python if it is still loading)</p>';
+  try {
+    const py = await pyReady;
+    let path = "/home/pyodide/sample_texts.csv";
+    if (!csvChoice.sample) { path = "/tmp/upload.csv"; py.FS.writeFile(path, csvChoice.bytes); }
+    await new Promise((r) => setTimeout(r, 30));  // let the message paint before the CPU-bound run
+    py.globals.set("csv_path", path);
+    const res = JSON.parse(await py.runPythonAsync("cluster_app.cluster_json(csv_path)"));
+    if (!res.ok) { out.innerHTML = `<p class="disclaimer">${esc(res.error)}</p>`; return; }
+    const s = res.summary;
+    let html = "<ul>" +
+      `<li>Text column detected: <strong>${esc(s.text_column)}</strong>${s.label_column ? ` (reference labels: <code>${esc(s.label_column)}</code>)` : ""}</li>` +
+      `<li>Rows used after cleaning: ${s.rows}; language: <strong>${esc(s.language)}</strong></li>` +
+      `<li>Algorithm chosen: <strong>${esc(s.algorithm)}</strong>, <strong>${s.n_clusters} clusters</strong>, cosine silhouette ` +
+      `<strong>${fmt(s.silhouette)}</strong>, noise ${(100 * s.noise_ratio).toFixed(0)}%</li>`;
+    if (s.external) html += `<li>Agreement with <code>${esc(s.label_column)}</code>: ARI ${fmt(s.external.ari, 2)}, NMI ${fmt(s.external.nmi, 2)}</li>`;
+    html += '</ul><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>cluster</th><th>size</th><th>top terms</th><th>representative example</th></tr></thead><tbody>';
+    for (const r of res.table) html += `<tr><td>${esc(r.cluster)}</td><td>${r.size}</td><td>${esc(r.top_terms)}</td><td>${esc(r.example)}</td></tr>`;
+    html += '</tbody></table></div><div class="grid" style="margin-top:16px">';
+    if (res.projection) html += `<figure><img class="plot" src="${res.projection}" alt="2-D projection of the texts coloured by cluster"><figcaption>2-D projection</figcaption></figure>`;
+    if (res.sizes) html += `<figure><img class="plot" src="${res.sizes}" alt="cluster sizes"><figcaption>Cluster sizes</figcaption></figure>`;
+    out.innerHTML = html + "</div>";
+    document.body.dataset.clusterDone = "1";  // read by the automated browser check
+  } catch (e) {
+    out.innerHTML = `<p class="disclaimer">Error: ${esc(e.message || e)}</p>`;
+  } finally {
+    updateRunButton();
+  }
+});
+
+function fmt(x, d = 3) { return Number(x).toFixed(d); }
+
+function showModelInfo(m) {
+  const t = (m.metrics || {}).test || {};
+  $("disclaimer").innerHTML =
+    "<strong>Research / education demo, not a medical device.</strong> The score is not a diagnosis and must not guide care. " +
+    "The model (HOG features + logistic regression) was trained on one public dataset (Chen 2018, OAI X-rays) and was not " +
+    `validated on any other hospital, scanner or population. On its held-out test set (${t.n} images) it reaches recall ` +
+    `<strong>${fmt(t.recall)}</strong> and specificity <strong>${fmt(t.specificity)}</strong> (ROC-AUC ${fmt(t.roc_auc)}): ` +
+    "about 1 knee with OA in 5 is missed and 1 healthy knee in 4 is flagged. Images are processed in your browser and are not uploaded.";
+  $("modelinfo").textContent = `Model: ${m.candidate} (trained with scikit-learn ${(m.trained_with || {})["scikit-learn"]}), ` +
+    `input ${m.image_size} x ${m.image_size} px grayscale, ${m.n_features} HOG features.`;
+}
+
+function drawInput(img, side) {
+  const c = $("cin"); c.width = side; c.height = side;
+  const ctx = c.getContext("2d"), id = ctx.createImageData(side, side);
+  for (let i = 0; i < side * side; i++) {
+    const v = Math.round(img[i] * 255);
+    id.data.set([v, v, v, 255], 4 * i);
+  }
+  ctx.putImageData(id, 0, 0);
+  $("cincap").textContent = `model input (${side} x ${side})`;
+}
+
+function drawHog(img, side, cell, bins) {
+  const { H, n } = Knee.cellHistograms(img, side, cell, bins);
+  const c = $("chog"), scale = c.width / (n * cell), ctx = c.getContext("2d");
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 1;
+  let top = 0;
+  for (const v of H) top = Math.max(top, v);
+  top = top || 1;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let b = 0; b < bins; b++) {
+    const w = H[(i * n + j) * bins + b];
+    const th = (b * 180 / bins + 90 / bins + 90) * Math.PI / 180;
+    const dx = Math.cos(th) * w / top * cell / 2, dy = Math.sin(th) * w / top * cell / 2;
+    const cx = j * cell + cell / 2, cy = i * cell + cell / 2;
+    ctx.moveTo((cx - dx) * scale, (cy - dy) * scale);
+    ctx.lineTo((cx + dx) * scale, (cy + dy) * scale);
+  }
+  ctx.stroke();
+  $("chogcap").textContent = `HOG cells (${cell} px, ${bins} bins)`;
+}
+
+function analyse(imgEl) {
+  if (!MODEL) return;
+  const w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(imgEl, 0, 0);
+  const gray = Knee.rgbaToGray(ctx.getImageData(0, 0, w, h).data, w * h);
+  const r = Knee.predict(gray, w, h, MODEL);
+  const oa = r.positive ? "yes" : "no";
+  $("verdict").innerHTML = `Signs of osteoarthritis (KL&gt;=2): <strong>${oa}</strong>`;
+  $("gauge").hidden = false;
+  $("bar").style.width = `${(r.score * 100).toFixed(1)}%`;
+  $("bar").style.background = r.positive ? "var(--warn)" : "var(--ok)";
+  $("thr").style.left = `${(r.threshold * 100).toFixed(1)}%`;
+  $("thrlabel").textContent = `threshold ${fmt(r.threshold, 2)}`;
+  $("detail").innerHTML = `Score <strong>${fmt(r.score)}</strong> vs. decision threshold ${fmt(r.threshold)} ` +
+    `(threshold set on validation for 85% recall). Predicted class: ${r.label}.<br><em>Not a diagnosis: see the disclaimer below.</em>`;
+  drawInput(r.img, MODEL.image_size);
+  drawHog(r.img, MODEL.image_size, MODEL.hog.cell, MODEL.hog.bins);
+  document.body.dataset.lastScore = r.score.toFixed(6);  // read by the automated browser check
+}
+
+function loadAndAnalyse(src) {
+  const im = new Image();
+  im.onload = () => analyse(im);
+  im.onerror = () => { $("verdict").textContent = "Could not read this image."; };
+  im.src = src;
+}
+
+$("file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (f) loadAndAnalyse(URL.createObjectURL(f));
+});
+
+for (const name of EXAMPLES) {
+  const b = document.createElement("button");
+  b.type = "button"; b.title = name; b.dataset.example = name;
+  b.innerHTML = `<img src="assets/examples/${name}.png" alt="example ${name}">${name.slice(0, 3).toUpperCase()}`;
+  b.addEventListener("click", () => loadAndAnalyse(`assets/examples/${name}.png`));
+  $("examples").appendChild(b);
+}
+
+fetch("assets/kneeclf-hog-logreg.json")
+  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then((m) => { MODEL = m; showModelInfo(m); $("verdict").textContent = "Upload a knee X-ray or pick an example."; })
+  .catch((e) => { $("verdict").textContent = `Model could not be loaded (${e}).`; });
+</script>
+</body>
+</html>

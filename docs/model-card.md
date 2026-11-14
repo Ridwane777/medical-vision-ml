@@ -102,7 +102,7 @@ Figures: [test curves](../results/knee/figures/test_curves.png),
   repository does not store the dataset; only six test-split images are copied as demo examples, with attribution
   ([`app/examples/ATTRIBUTION.md`](../app/examples/ATTRIBUTION.md)).
 - The main harm would be misuse as a diagnostic aid: a missed OA case (122 of 721 on test) or a false alarm (281 of
-  935). Hence the "not intended use" section. The public demo (CLI `predict` and the Gradio app) prints a
+  935). Hence the "not intended use" section. The public demo (CLI `predict`, the static web demo and the local Gradio app) prints a
   "not a medical device" disclaimer with the test recall and specificity next to every output.
 - Fairness across age, sex or ethnicity cannot be measured: the dataset has no such metadata.
 
@@ -132,7 +132,7 @@ the same protocol, [`configs/demo.json`](../configs/demo.json) (only the `hog_lo
 | Validation | ROC-AUC 0.857, recall 0.852, specificity 0.645 |
 | **Test (1,656 images, used once)** | **recall 0.811, specificity 0.719**, precision 0.690, F2 0.784, ROC-AUC 0.854, PR-AUC 0.845, balanced accuracy 0.765 |
 | Test confusion matrix | TN 672 · FP 263 · FN 136 · TP 585 |
-| File | `kneeclf-hog-logreg.pkl`, 172,307 bytes (168 KB), with a `.sha256` file |
+| Files | `kneeclf-hog-logreg.pkl`, 172,307 bytes (168 KB), and the portable `kneeclf-hog-logreg.json`, 376,862 bytes (368 KB), each with a `.sha256` file |
 | Training time | 25.1 s total (26.8 s wall clock, 1.0 GB peak memory), laptop, 12 logical CPUs, 3 workers |
 | Software | Python 3.14.4, NumPy 2.5.4, scikit-learn 1.9.1 |
 
@@ -151,4 +151,24 @@ Reproduce and export:
 ```bash
 PYTHONPATH=src python -m kneeclf train --data data/knee --config configs/demo.json --n-jobs 3
 PYTHONPATH=src python -m kneeclf export runs/<timestamp> --out dist/kneeclf-hog-logreg.pkl
+PYTHONPATH=src python -m kneeclf export-json      # dist/kneeclf-hog-logreg.pkl -> dist/kneeclf-hog-logreg.json
 ```
+
+### Portable JSON model (no pickle)
+
+`kneeclf-hog-logreg.json` (`format: "kneeclf-portable/1"`) holds only plain numbers and strings: HOG parameters
+(cell 8, block 2, 9 bins, L2-Hys clip 0.2), input and model image sizes (224 then 112 px), label scheme and class
+names, the `StandardScaler` mean and scale (6,084 values each), the logistic regression coefficients and intercept
+(with the dtype they were fitted in, float32), the threshold, the metrics summary and the training library
+versions. Reading it cannot execute code and needs no scikit-learn.
+
+Two predictors read it:
+
+- `src/kneeclf/portable.py` (numpy + Pillow): reproduces the pipeline's `decision_function` with the same
+  arithmetic. On the 1,656 real test images its scores are **identical** to the pickle pipeline's (maximum absolute
+  difference 0.0, checked locally on 2026-11-14), so recall 0.8114 and specificity 0.7187 are unchanged.
+  `tests/test_portable.py` checks the same on synthetic images (difference below 1e-6).
+- `demo/knee.js` (plain JavaScript, used by the static web demo): a port of the same code in float64. On the six
+  example images its decision scores differ from Python's by at most 4.3e-6, far from the threshold;
+  `tests/test_portable.py` checks the port with Node.js when it is installed (tolerance 1e-4). Images whose side is
+  not 224 px are resized with a JavaScript box filter that can differ from Pillow's by one gray level.

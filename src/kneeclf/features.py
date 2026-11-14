@@ -9,6 +9,8 @@ import math
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from .portable import hog_batch
+
 
 def _as_images(X):
     X = np.asarray(X, dtype=np.float32)
@@ -63,39 +65,7 @@ class HOG(_Stateless):
         return nb, nb, self.block * self.block * self.bins
 
     def _transform_batch(self, imgs):
-        n, h, w = imgs.shape
-        gx = np.zeros_like(imgs)
-        gy = np.zeros_like(imgs)
-        gx[:, :, 1:-1] = imgs[:, :, 2:] - imgs[:, :, :-2]
-        gy[:, 1:-1, :] = imgs[:, 2:, :] - imgs[:, :-2, :]
-        mag = np.hypot(gx, gy)
-        ang = np.rad2deg(np.arctan2(gy, gx)) % 180.0
-        pos = ang / (180.0 / self.bins) - 0.5
-        b0 = np.floor(pos)
-        w1 = (pos - b0).astype(np.float32)
-        b0 = b0.astype(np.int64) % self.bins
-        b1 = (b0 + 1) % self.bins
-
-        c = self.cell
-        ch, cw = h // c, w // c
-        if ch < self.block or cw < self.block:
-            raise ValueError(f"image {h}x{w} too small for cell={c}, block={self.block}")
-        sl = (slice(None), slice(0, ch * c), slice(0, cw * c))
-        mag, w1, b0, b1 = mag[sl], w1[sl], b0[sl], b1[sl]
-        m0, m1 = mag * (1 - w1), mag * w1
-        hist = np.empty((n, ch, cw, self.bins), dtype=np.float32)
-        for b in range(self.bins):
-            contrib = np.where(b0 == b, m0, 0) + np.where(b1 == b, m1, 0)
-            hist[..., b] = contrib.reshape(n, ch, c, cw, c).sum(axis=(2, 4))
-
-        k = self.block
-        bh, bw = ch - k + 1, cw - k + 1
-        blocks = np.concatenate([hist[:, i:i + bh, j:j + bw] for i in range(k) for j in range(k)], axis=-1)
-        eps = 1e-6
-        blocks = blocks / np.sqrt((blocks ** 2).sum(-1, keepdims=True) + eps ** 2)
-        blocks = np.minimum(blocks, self.clip)
-        blocks = blocks / np.sqrt((blocks ** 2).sum(-1, keepdims=True) + eps ** 2)
-        return blocks.reshape(n, -1)
+        return hog_batch(imgs, self.cell, self.block, self.bins, self.clip)
 
 
 class LBPHistogram(_Stateless):

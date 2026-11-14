@@ -3,6 +3,7 @@
     python -m kneeclf train --data ROOT [--config cfg.json] [--quick] [--n-jobs 4] [--output runs]
     python -m kneeclf --data ROOT ...            (old form, same as `train`)
     python -m kneeclf export RUN_DIR [--out dist/kneeclf-hog-logreg.pkl]
+    python -m kneeclf export-json [--model dist/kneeclf-hog-logreg.pkl] [--out dist/kneeclf-hog-logreg.json]
     python -m kneeclf download-model [--dest DIR]
     python -m kneeclf predict IMAGE [IMAGE ...] [--model PATH] [--json]
 """
@@ -17,7 +18,7 @@ import matplotlib
 
 matplotlib.use("Agg")  # the CLI only writes PNG files
 
-from . import inference  # noqa: E402
+from . import inference, portable  # noqa: E402
 from .train import Config, run  # noqa: E402
 
 # Built-in preset for --quick: small sample, 64 px, tiny grids (same spirit as configs/quick.json).
@@ -26,7 +27,7 @@ QUICK = {"image_size": 64, "max_per_class": 150, "max_per_class_eval": 150, "cv_
 QUICK_GRIDS = {"raw_pca_logreg": {"pca__n_components": [30], "logreg__C": [0.01]},
                "hog_logreg": {"logreg__C": [0.001, 0.01]},
                "hog_svc": {"svc__C": [1], "svc__gamma": ["scale"]}}
-COMMANDS = ("train", "predict", "download-model", "export")
+COMMANDS = ("train", "predict", "download-model", "export", "export-json")
 
 
 def _train_args(p):
@@ -75,6 +76,18 @@ def cmd_export(a):
     return 0
 
 
+def cmd_export_json(a):
+    try:
+        bundle = inference.load_bundle(a.model)
+    except (FileNotFoundError, inference.ChecksumError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    path, size = portable.export_json(bundle, a.out)
+    digest = inference.write_checksum(path)
+    print(json.dumps({"model_json": str(path), "sha256": digest, "bytes": size}, indent=2))
+    return 0
+
+
 def cmd_download(a):
     path = inference.download_model(a.dest)
     print(f"model saved and verified: {path}")
@@ -113,6 +126,9 @@ def main(argv=None):
     pe = sub.add_parser("export", help="export a run's model to a small self-contained file + .sha256")
     pe.add_argument("run_dir")
     pe.add_argument("--out", default=f"dist/{inference.MODEL_FILENAME}")
+    pj = sub.add_parser("export-json", help="convert an exported pickle model to the portable JSON model (no pickle)")
+    pj.add_argument("--model", default=f"dist/{inference.MODEL_FILENAME}")
+    pj.add_argument("--out", default=f"dist/{portable.JSON_FILENAME}")
     pd_ = sub.add_parser("download-model", help="download the released demo model and verify its SHA-256")
     pd_.add_argument("--dest", help=f"folder (default: {inference.default_cache_dir()})")
     pp = sub.add_parser("predict", help="score knee X-ray images (PNG/JPG)")
@@ -121,7 +137,7 @@ def main(argv=None):
                     help="exported model file (default: the download-model cache)")
     pp.add_argument("--json", action="store_true", help="machine-readable output")
     a = p.parse_args(argv)
-    return {"train": cmd_train, "export": cmd_export, "download-model": cmd_download,
+    return {"train": cmd_train, "export": cmd_export, "export-json": cmd_export_json, "download-model": cmd_download,
             "predict": cmd_predict}[a.command](a)
 
 

@@ -10,8 +10,10 @@ measures what deep embeddings (frozen ImageNet CNNs, sentence transformers) woul
 
 No retraining needed.
 
-1. **Online demo** (coming soon): [huggingface.co/spaces/Ridwane777/medical-vision-ml](https://huggingface.co/spaces/Ridwane777/medical-vision-ml).
-   Upload a knee X-ray or a CSV of texts in the browser.
+1. **Online demo** (coming soon): [ridwane777.github.io/medical-vision-ml](https://ridwane777.github.io/medical-vision-ml/).
+   A static page: everything runs in your browser and nothing is uploaded. The knee tab is instant (the demo model
+   exported to JSON, run by a small JavaScript port of the Python predictor); the text clustering tab runs the
+   project's own Python code with [Pyodide](https://pyodide.org/), which downloads about 23 MB the first time.
 2. **Score your own knee X-rays** with the light demo model (HOG + logistic regression, 168 KB, test recall 0.811,
    specificity 0.719, see the [model card](docs/model-card.md#demo-model-hog--logistic-regression-distributed)):
 
@@ -31,8 +33,9 @@ No retraining needed.
    PYTHONPATH=src python -m textclust your_file.csv --text-column comment --output runs
    ```
 
-4. **Run the demo app locally**: `pip install -r app/requirements.txt && python app/app.py` (needs the model in
-   `dist/` or in the download cache).
+4. **Run the demos locally**: the static page with `scripts/build_demo.sh && python -m http.server -d demo 8000`
+   (then open http://localhost:8000/), or the server-side Gradio app with
+   `pip install -r app/requirements.txt && python app/app.py` (needs the model in `dist/` or in the download cache).
 
 ## Results highlights
 
@@ -93,8 +96,10 @@ reaches test ROC-AUC 0.835, recall 0.813, specificity 0.665, **below** HOG + SVC
 │   ├── knee/                   # metrics, comparison, figures of the full knee run
 │   ├── knee-demo/              # same for the distributed HOG + LogReg demo model
 │   └── deep_embeddings/        # knee/ and text/ results of the comparison
-├── app/                        # Gradio demo (Hugging Face Space): app.py, requirements, examples
-├── scripts/                    # build_space.sh (assembles dist/space/), make_sample_texts.py
+├── demo/                       # static web demo (GitHub Pages): index.html, knee.js, cluster_app.py
+├── app/                        # local Gradio demo: app.py, requirements, examples (also used by demo/)
+├── scripts/                    # build_demo.sh (fills demo/assets/), make_sample_texts.py
+├── .github/workflows/pages.yml # builds and publishes demo/ to GitHub Pages on push to main
 ├── tests/                      # unittest suites (synthetic images, generated CSV files)
 ├── data/                       # local data, git-ignored; see data/README.md
 └── docs/                       # model card, data cards, performance, retrospective
@@ -119,7 +124,7 @@ PYTHONPATH=src python -m textclust data/testimonies.csv --output runs
 # knee classifier: smoke test (about 15 s, numbers are not results), then the full run (about 36 min on 4 workers)
 PYTHONPATH=src python -m kneeclf --data data/knee --config configs/quick.json
 PYTHONPATH=src python -m kneeclf --data data/knee --config configs/full.json --n-jobs 4
-# (`python -m kneeclf train --data ...` is the same; subcommands: train, export, download-model, predict)
+# (`python -m kneeclf train --data ...` is the same; subcommands: train, export, export-json, download-model, predict)
 
 jupyter lab notebooks/
 ```

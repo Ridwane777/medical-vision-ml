@@ -1,8 +1,8 @@
-"""Medical Vision ML: Gradio demo (Hugging Face Spaces or local).
+"""Medical Vision ML: Gradio demo, run locally from the repository (server-side Python).
 
 Local run from the repository (after exporting or downloading the model):
     python app/app.py
-The Space folder is assembled by scripts/build_space.sh (app + src/kneeclf + src/textclust + model file).
+The online demo is the static page in demo/ (GitHub Pages); this app is the same demo for people running from source.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-# In the repository the packages live in ../src; in the built Space they sit next to this file.
+# In the repository the packages live in ../src (or next to this file if copied together).
 for cand in (HERE, HERE.parent / "src"):
     if (cand / "kneeclf").is_dir():
         sys.path.insert(0, str(cand))
@@ -39,7 +39,7 @@ def find_model():
     for c in candidates:
         if c and Path(c).is_file():
             return Path(c)
-    raise FileNotFoundError("model file not found: run scripts/build_space.sh, "
+    raise FileNotFoundError("model file not found: run "
                             "`python -m kneeclf export ...` or `python -m kneeclf download-model`")
 
 

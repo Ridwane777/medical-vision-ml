@@ -16,9 +16,8 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
 
-from . import data, evaluate
+from . import data, evaluate, portable
 
 FORMAT = "kneeclf-model/1"
 MODEL_FILENAME = "kneeclf-hog-logreg.pkl"
@@ -127,25 +126,9 @@ def preprocess(image, bundle):
     """Any PIL image / path / array -> flattened float32 row at the model's size, values in [0, 1].
 
     Same steps as training: grayscale, square 224 x 224 (resized with Pillow's area filter), then the
-    pipeline's own block-mean downscale (224 -> 112).
+    pipeline's own block-mean downscale (224 -> 112). Shared with the portable JSON predictor.
     """
-    if isinstance(image, (str, Path)):
-        with Image.open(image) as im:
-            im.load()
-            image = im.copy()
-    if isinstance(image, np.ndarray):
-        arr = image.astype(np.float32)
-        if arr.ndim == 3:
-            arr = arr[..., :3].mean(axis=2)
-        if arr.max() > 1.0:
-            arr = arr / 255.0
-        image = Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8), mode="L")
-    side_in = bundle.get("input_side", NATIVE_SIDE)
-    gray = image.convert("L")
-    if gray.size != (side_in, side_in):
-        gray = gray.resize((side_in, side_in), Image.Resampling.BOX)
-    arr = np.asarray(gray, dtype=np.float32) / 255.0
-    return data.downscale(arr, bundle["image_size"]).reshape(1, -1)
+    return portable.preprocess(image, bundle)
 
 
 def _probability(pipeline, X, scores):
@@ -206,57 +189,5 @@ def download_model(dest=None, base_url=RELEASE_URL, filename=MODEL_FILENAME, tim
     return target
 
 
-# ---- HOG visualization (same code as notebook 01, simplified HOG without block normalisation) ----
-
-def cell_histograms(image, cell=8, bins=9):
-    """Per-cell orientation histograms weighted by gradient magnitude, shape (n, n, bins)."""
-    image = np.asarray(image, dtype=np.float32)
-    gx = np.zeros_like(image)
-    gy = np.zeros_like(image)
-    gx[:, 1:-1] = image[:, 2:] - image[:, :-2]
-    gy[1:-1, :] = image[2:, :] - image[:-2, :]
-    mag, ori = np.hypot(gx, gy), np.rad2deg(np.arctan2(gy, gx)) % 180
-    n = image.shape[0] // cell
-    H = np.zeros((n, n, bins))
-    for i in range(n):
-        for j in range(n):
-            sl = (slice(i * cell, (i + 1) * cell), slice(j * cell, (j + 1) * cell))
-            H[i, j] = np.histogram(ori[sl], bins=bins, range=(0, 180), weights=mag[sl])[0]
-    return H
-
-
-def draw_hog(ax, H, cell=8):
-    """One short line per bin, drawn along the edge (perpendicular to the gradient); longer = stronger."""
-    from matplotlib.collections import LineCollection
-    ax.set_facecolor("black")
-    top = H.max() or 1.0
-    bins = H.shape[2]
-    segs = []
-    for i in range(H.shape[0]):
-        for j in range(H.shape[1]):
-            for b, w in enumerate(H[i, j]):
-                theta = np.deg2rad(b * 180 / bins + 90 / bins + 90)
-                dx, dy = np.cos(theta) * w / top * cell / 2, np.sin(theta) * w / top * cell / 2
-                cx, cy = j * cell + cell / 2, i * cell + cell / 2
-                segs.append([(cx - dx, cy - dy), (cx + dx, cy + dy)])
-    ax.add_collection(LineCollection(segs, colors="white", linewidths=0.8))
-    ax.set_xlim(0, H.shape[1] * cell)
-    ax.set_ylim(H.shape[0] * cell, 0)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-
-def hog_figure(image, bundle):
-    """Matplotlib figure: the model input (grayscale, model size) and its HOG cells."""
-    import matplotlib.pyplot as plt
-    side = bundle["image_size"]
-    img = preprocess(image, bundle).reshape(side, side)
-    cell, bins = bundle["hog"].get("cell", 8), bundle["hog"].get("bins", 9)
-    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
-    axes[0].imshow(img, cmap="gray", vmin=0, vmax=1)
-    axes[0].set_title(f"model input ({side} x {side})")
-    axes[0].axis("off")
-    draw_hog(axes[1], cell_histograms(img, cell, bins), cell)
-    axes[1].set_title(f"HOG cells ({cell} px, {bins} bins)")
-    fig.tight_layout()
-    return fig
+# HOG visualization lives in viz.py (no pickle, browser-friendly); re-exported here for compatibility.
+from .viz import cell_histograms, draw_hog, hog_figure  # noqa: E402,F401
