@@ -1,0 +1,7 @@
+gradio==6.32.0
+numpy
+pandas
+matplotlib
+pillow
+# must match the version that pickled the model (see the model's "versions" field)
+scikit-learn==1.9.1

@@ -99,9 +99,11 @@ Figures: [test curves](../results/knee/figures/test_curves.png),
 ## Ethical considerations
 
 - Medical images of real patients, redistributed by Kaggle under CC BY 4.0; no identity data in the files. This
-  repository does not store the images.
+  repository does not store the dataset; only six test-split images are copied as demo examples, with attribution
+  ([`app/examples/ATTRIBUTION.md`](../app/examples/ATTRIBUTION.md)).
 - The main harm would be misuse as a diagnostic aid: a missed OA case (122 of 721 on test) or a false alarm (281 of
-  935). Hence the "not intended use" section and no packaged inference service.
+  935). Hence the "not intended use" section. The public demo (CLI `predict` and the Gradio app) prints a
+  "not a medical device" disclaimer with the test recall and specificity next to every output.
 - Fairness across age, sex or ethnicity cannot be measured: the dataset has no such metadata.
 
 ## How to reproduce
@@ -115,3 +117,38 @@ seed 42. Run time: **2,188 s (about 36 min)** on an 8-core CPU server with 4 wor
 ([performance](performance/README.md)). The viewer notebook
 [`notebooks/01_knee_classification.ipynb`](../notebooks/01_knee_classification.ipynb) displays the
 versioned results without the dataset or the model file.
+
+## Demo model (HOG + logistic regression, distributed)
+
+The 200 MB SVC above is not distributed. The `predict` command and the online demo use a lighter model trained with
+the same protocol, [`configs/demo.json`](../configs/demo.json) (only the `hog_logreg` candidate; same label scheme,
+112 px, balanced train, recall target 0.85 on validation, seed 42). Numbers from
+[`results/knee-demo/metrics.json`](../results/knee-demo/metrics.json) (run of 2026-11-14):
+
+| | Value |
+| --- | --- |
+| Pipeline | HOG (6,084 dims) + `StandardScaler` + `LogisticRegression(C=0.0003, class_weight="balanced")` |
+| Threshold | decision score >= -0.4418, i.e. probability >= 0.391 |
+| Validation | ROC-AUC 0.857, recall 0.852, specificity 0.645 |
+| **Test (1,656 images, used once)** | **recall 0.811, specificity 0.719**, precision 0.690, F2 0.784, ROC-AUC 0.854, PR-AUC 0.845, balanced accuracy 0.765 |
+| Test confusion matrix | TN 672 · FP 263 · FN 136 · TP 585 |
+| File | `kneeclf-hog-logreg.pkl`, 172,307 bytes (168 KB), with a `.sha256` file |
+| Training time | 25.1 s total (26.8 s wall clock, 1.0 GB peak memory), laptop, 12 logical CPUs, 3 workers |
+| Software | Python 3.14.4, NumPy 2.5.4, scikit-learn 1.9.1 |
+
+Compared with HOG + SVC on the same test set: ROC-AUC 0.854 vs. 0.861, recall 0.811 vs. 0.831, specificity
+0.719 vs. 0.700, for a file about 1,200 times smaller and a 25 s training run.
+
+The exported file is a dict (`format: "kneeclf-model/1"`) holding the scikit-learn pipeline (HOG extractor + scaler
++ logistic regression), the HOG parameters, the image size, the label scheme, the threshold, a metrics summary and
+the library versions. It is a **pickle**: loading it can run code, so only load it from a trusted source (your own
+export or the project's GitHub release). `kneeclf.inference.load_bundle` refuses the file when its `.sha256` does
+not match, and `download-model` verifies the checksum before moving the file into place. Load it with the same
+scikit-learn version (1.9.1); other versions may warn or fail.
+
+Reproduce and export:
+
+```bash
+PYTHONPATH=src python -m kneeclf train --data data/knee --config configs/demo.json --n-jobs 3
+PYTHONPATH=src python -m kneeclf export runs/<timestamp> --out dist/kneeclf-hog-logreg.pkl
+```

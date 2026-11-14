@@ -6,6 +6,34 @@ lightweight: it runs on a CPU in minutes, every feature is interpretable (a HOG 
 terms), and it depends only on NumPy, pandas, Matplotlib, scikit-learn, Pillow and JupyterLab. A separate experiment
 measures what deep embeddings (frozen ImageNet CNNs, sentence transformers) would add, with the same protocol.
 
+## Try it
+
+No retraining needed.
+
+1. **Online demo** (coming soon): [huggingface.co/spaces/Ridwane777/medical-vision-ml](https://huggingface.co/spaces/Ridwane777/medical-vision-ml).
+   Upload a knee X-ray or a CSV of texts in the browser.
+2. **Score your own knee X-rays** with the light demo model (HOG + logistic regression, 168 KB, test recall 0.811,
+   specificity 0.719, see the [model card](docs/model-card.md#demo-model-hog--logistic-regression-distributed)):
+
+   ```bash
+   pip install -r requirements.txt
+   PYTHONPATH=src python -m kneeclf download-model          # GitHub release -> ~/.cache/medical-vision-ml/, SHA-256 checked
+   PYTHONPATH=src python -m kneeclf predict knee1.png knee2.jpg   # add --json for machine-readable output
+   ```
+
+   Any PNG/JPG works (converted to grayscale, resized to 224 then 112 px). Output per image: a probability-like
+   score, the decision at the stored threshold ("signs of osteoarthritis (KL>=2): yes/no") and a disclaimer.
+   **Not a medical device.** The model file is a pickle: only load it from this repository's releases.
+3. **Cluster any CSV of short texts** (column, delimiter, language, k and algorithm are detected):
+
+   ```bash
+   PYTHONPATH=src python -m textclust app/examples/sample_texts.csv --output runs   # 150 synthetic texts
+   PYTHONPATH=src python -m textclust your_file.csv --text-column comment --output runs
+   ```
+
+4. **Run the demo app locally**: `pip install -r app/requirements.txt && python app/app.py` (needs the model in
+   `dist/` or in the download cache).
+
 ## Results highlights
 
 **Knee osteoarthritis** (KL 0-1 vs. KL 2-4, full run of `configs/full.json` on 2026-11-11, test set of 1,656 images used
@@ -53,7 +81,7 @@ reaches test ROC-AUC 0.835, recall 0.813, specificity 0.665, **below** HOG + SVC
 ├── README.md
 ├── requirements.txt            # core: numpy, pandas, matplotlib, scikit-learn, pillow, jupyterlab
 ├── requirements-deep.txt       # optional: torch, torchvision, sentence-transformers
-├── configs/                    # quick.json (smoke test), full.json (reference run)
+├── configs/                    # quick.json (smoke test), full.json (reference run), demo.json (demo model)
 ├── src/
 │   ├── kneeclf/                # knee X-ray pipeline: loading, HOG, candidates, threshold, evaluation, CLI
 │   └── textclust/              # adaptive CSV-of-texts clustering: loading, cleaning, TF-IDF/SVD, model choice, CLI
@@ -63,7 +91,10 @@ reaches test ROC-AUC 0.835, recall 0.813, specificity 0.665, **below** HOG + SVC
 ├── experiments/deep_embeddings/  # frozen CNN and sentence-embedding comparison (needs requirements-deep.txt)
 ├── results/
 │   ├── knee/                   # metrics, comparison, figures of the full knee run
+│   ├── knee-demo/              # same for the distributed HOG + LogReg demo model
 │   └── deep_embeddings/        # knee/ and text/ results of the comparison
+├── app/                        # Gradio demo (Hugging Face Space): app.py, requirements, examples
+├── scripts/                    # build_space.sh (assembles dist/space/), make_sample_texts.py
 ├── tests/                      # unittest suites (synthetic images, generated CSV files)
 ├── data/                       # local data, git-ignored; see data/README.md
 └── docs/                       # model card, data cards, performance, retrospective
@@ -88,6 +119,7 @@ PYTHONPATH=src python -m textclust data/testimonies.csv --output runs
 # knee classifier: smoke test (about 15 s, numbers are not results), then the full run (about 36 min on 4 workers)
 PYTHONPATH=src python -m kneeclf --data data/knee --config configs/quick.json
 PYTHONPATH=src python -m kneeclf --data data/knee --config configs/full.json --n-jobs 4
+# (`python -m kneeclf train --data ...` is the same; subcommands: train, export, download-model, predict)
 
 jupyter lab notebooks/
 ```
