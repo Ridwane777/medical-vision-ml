@@ -174,3 +174,7 @@ produce coarser themes for an 87 to 449 MB model download.
 ## Author
 
 [Ridwane777](https://github.com/Ridwane777)
+
+## License
+
+Code: [MIT](LICENSE). Example X-rays in `app/examples/`: CC BY 4.0, see [ATTRIBUTION](app/examples/ATTRIBUTION.md).
