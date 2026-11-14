@@ -10,7 +10,7 @@ measures what deep embeddings (frozen ImageNet CNNs, sentence transformers) woul
 
 No retraining needed.
 
-1. **Online demo** (coming soon): [ridwane777.github.io/medical-vision-ml](https://ridwane777.github.io/medical-vision-ml/).
+1. **Online demo**: [ridwane777.github.io/medical-vision-ml](https://ridwane777.github.io/medical-vision-ml/).
    A static page: everything runs in your browser and nothing is uploaded. The knee tab is instant (the demo model
    exported to JSON, run by a small JavaScript port of the Python predictor); the text clustering tab runs the
    project's own Python code with [Pyodide](https://pyodide.org/), which downloads about 23 MB the first time.
