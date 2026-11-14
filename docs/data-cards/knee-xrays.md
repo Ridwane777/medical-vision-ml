@@ -9,7 +9,8 @@ Short datasheet after Gebru et al., "Datasheets for Datasets" (2021).
   the Kaggle API on 2026-11-11).
 - Acknowledged origin: Chen, Pingjun (2018), "Knee Osteoarthritis Severity Grading Dataset", Mendeley Data, V1,
   doi: [10.17632/56rmx5bjcr.1](https://doi.org/10.17632/56rmx5bjcr.1).
-- Not stored in this repository (git-ignored); download it and pass its root with `--data`.
+- Not stored in this repository (git-ignored); download it into `data/knee/` (see [data/README.md](../../data/README.md))
+  or pass its root with `--data`.
 
 ## Composition
 
@@ -26,7 +27,8 @@ Short datasheet after Gebru et al., "Datasheets for Datasets" (2021).
 
 ## Preprocessing in this project
 
-1. Binary label: KL 0-1 = no OA, KL 2-4 = OA ([ADR-0002](../adr/0002-binary-label-scheme.md)).
+1. Binary label: KL 0-1 = no OA, KL 2-4 = OA, the radiographic definition of OA (definite osteophyte). KL 0 vs. 1-4
+   remains available as `--label-scheme kl0_vs_1to4`.
 2. Train balanced by random undersampling of the majority class (seed 42): 4,892 images kept, 2,446 per class
    (KL 0: 1,689 of 2,286 kept; KL 1: 757 of 1,046). Validation and test are kept whole, with their real ratio.
 3. Pixels as float32 in [0, 1], downscaled to 112x112 by block mean.

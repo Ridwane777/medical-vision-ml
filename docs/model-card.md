@@ -1,16 +1,16 @@
 # Model card: knee osteoarthritis classifier (HOG + SVC)
 
 Structure after Mitchell et al., "Model Cards for Model Reporting" (2019). Every number comes from
-[`results/supervised/metrics.json`](../results/supervised/metrics.json) and
-[`comparison.md`](../results/supervised/comparison.md) (full run of 2026-11-11).
+[`results/knee/metrics.json`](../results/knee/metrics.json) and
+[`comparison.md`](../results/knee/comparison.md) (full run of 2026-11-11).
 
 ## Model details
 
-- **Developer**: [Ridwane777](https://github.com/Ridwane777). Portfolio refactor of a school project.
+- **Developer**: [Ridwane777](https://github.com/Ridwane777).
 - **Version**: full run `configs/full.json`, 2026-11-11, package `src/kneeclf`.
 - **Type**: binary classifier. Features: a HOG descriptor written in NumPy (9 bins, 8x8 cells, 2x2 blocks, L2-Hys,
   6,084 dims at 112 px). Model: `StandardScaler` + `SVC` (RBF kernel, `C=10`, `gamma="scale"`), chosen among six
-  candidates by validation ROC-AUC ([ADR-0003](adr/0003-classical-features-and-recall-first-evaluation.md)).
+  candidates by validation ROC-AUC.
 - **Output**: SVC decision score; OA if score >= **-0.2003** (threshold tuned on validation).
 - **Software**: Python 3.12.3, NumPy 2.5.4, scikit-learn 1.9.1, pandas 3.1.1, Matplotlib 3.11.2, Pillow 13.0.0.
 - **License of the code**: see the repository. The model file (`model.pkl`, about 200 MB) is not versioned.
@@ -28,9 +28,9 @@ Structure after Mitchell et al., "Model Cards for Model Reporting" (2019). Every
 
 ## Factors
 
-- **Label**: KL 0-1 = no OA (0), KL 2-4 = OA (1), the usual radiographic definition
-  ([ADR-0002](adr/0002-binary-label-scheme.md)). KL 1 ("doubtful") sits on the border and is expected to carry most
-  errors.
+- **Label**: KL 0-1 = no OA (0), KL 2-4 = OA (1), the usual radiographic definition (definite osteophyte), so the
+  metrics can be read against the literature. KL 1 ("doubtful") sits on the border and is expected to carry most
+  errors; the alternative scheme KL 0 vs. KL 1-4 is available with `--label-scheme kl0_vs_1to4`.
 - No demographic metadata (age, sex, site, device) is available in the dataset, so no subgroup analysis is possible.
 
 ## Training and evaluation data
@@ -78,14 +78,16 @@ Candidates on validation (each at its own recall-0.85 threshold):
 | raw pixels + PCA + SVC | 0.780 | 0.792 | 0.551 |
 | raw pixels + PCA + LogReg | 0.786 | 0.779 | 0.482 |
 
-Figures: [test curves](../results/supervised/figures/test_curves.png),
-[test confusion](../results/supervised/figures/test_confusion.png),
-[validation curves](../results/supervised/figures/val_curves.png).
+Figures: [test curves](../results/knee/figures/test_curves.png),
+[test confusion](../results/knee/figures/test_confusion.png),
+[validation curves](../results/knee/figures/val_curves.png).
 
 ## Limitations
 
-- **Classical features only** (project constraint): HOG captures edges and texture, not the joint space width a
-  radiologist measures. ROC-AUC 0.861 is a baseline, far from what CNNs report on the same task.
+- **Classical features only** (a design choice: CPU-only, interpretable, small dependency set): HOG captures edges and
+  texture, not the joint space width a radiologist measures. ROC-AUC 0.861 is a baseline, below what fine-tuned CNNs
+  report on the same task. A frozen ImageNet ResNet-50 did worse (test ROC-AUC 0.835, see
+  [deep embeddings](../experiments/deep_embeddings/README.md)).
 - **112 px**: half the native resolution, chosen for run time and memory. Fine osteophytes may be lost.
 - **Single dataset, single source**: no external validation. Possible acquisition bias (devices, sites, cropping,
   exposure) that the model may exploit and that would not transfer.
@@ -105,11 +107,11 @@ Figures: [test curves](../results/supervised/figures/test_curves.png),
 ## How to reproduce
 
 ```bash
-PYTHONPATH=src python -m kneeclf --data /path/to/Dataset_Knee_Osteoarthritis --config configs/full.json --n-jobs 4
+PYTHONPATH=src python -m kneeclf --data data/knee --config configs/full.json --n-jobs 4
 ```
 
-Configuration: [`configs/full.json`](../configs/full.json) (copy used: [`results/supervised/config.json`](../results/supervised/config.json)),
+Configuration: [`configs/full.json`](../configs/full.json) (copy used: [`results/knee/config.json`](../results/knee/config.json)),
 seed 42. Run time: **2,188 s (about 36 min)** on an 8-core CPU server with 4 workers, no GPU
 ([performance](performance/README.md)). The viewer notebook
-[`supervised_learning/knee_classification.ipynb`](../supervised_learning/knee_classification.ipynb) displays the
+[`notebooks/01_knee_classification.ipynb`](../notebooks/01_knee_classification.ipynb) displays the
 versioned results without the dataset or the model file.

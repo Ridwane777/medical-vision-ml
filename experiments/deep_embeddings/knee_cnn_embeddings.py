@@ -1,12 +1,12 @@
-"""Beyond the specification: frozen ImageNet CNNs as feature extractors for the knee task.
+"""Classical vs. deep embeddings: frozen ImageNet CNNs as feature extractors for the knee task.
 
-Uses torch/torchvision, which the project specification forbids, so this lives outside src/.
+Uses torch/torchvision, which the lightweight core deliberately avoids, so this lives outside src/.
 Same protocol as src/kneeclf: label scheme kl01_vs_2to4, balanced train, real-ratio val/test,
 GridSearchCV on train, threshold for recall 0.85 on validation, test touched once for the
 candidate selected on validation ROC-AUC.
 
 Run from the repository root:
-    PYTHONPATH=src:. python beyond_scope/knee_cnn_embeddings.py --data data/knee
+    PYTHONPATH=src:. python experiments/deep_embeddings/knee_cnn_embeddings.py --data data/knee
 """
 from __future__ import annotations
 
@@ -26,11 +26,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from kneeclf import data, evaluate, models  # noqa: E402
 
-log = logging.getLogger("beyond.knee")
+log = logging.getLogger("deep.knee")
 MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
 STD = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
 BACKBONES = {
@@ -77,8 +77,8 @@ def head(name, seed):
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--data", default="data/knee")
-    p.add_argument("--out", default="results/beyond_scope/knee")
-    p.add_argument("--cache", default="runs/beyond_cache")
+    p.add_argument("--out", default="results/deep_embeddings/knee")
+    p.add_argument("--cache", default="runs/deep_cache")
     p.add_argument("--backbones", nargs="+", default=list(BACKBONES))
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--seed", type=int, default=42)

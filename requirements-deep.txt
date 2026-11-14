@@ -1,0 +1,9 @@
+# Optional: deep-embedding comparison in experiments/deep_embeddings/ (torch, torchvision, sentence-transformers). Core: requirements.txt
+torch>=2.5
+torchvision>=0.20
+sentence-transformers>=3.0
+numpy
+pandas
+matplotlib
+scikit-learn
+pillow

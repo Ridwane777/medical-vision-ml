@@ -1,23 +1,22 @@
-# Beyond the specification
+# Classical vs. deep embeddings
 
-The project specification allows only NumPy, pandas, Matplotlib, scikit-learn, JupyterLab, Pillow and the Python
-standard library. The core (`src/kneeclf`, `src/textclust`) follows that rule. This folder uses libraries **outside**
-that list (PyTorch, torchvision, sentence-transformers) to measure what they would add. The decision is recorded in
-[ADR-0004](../docs/adr/0004-beyond-scope-separation.md).
+The core (`src/kneeclf`, `src/textclust`) uses classical features on purpose: CPU-only, interpretable, and a small
+dependency set (NumPy, pandas, Matplotlib, scikit-learn, Pillow, JupyterLab). This folder measures what deep embeddings
+would add, with PyTorch, torchvision and sentence-transformers (`requirements-deep.txt`).
 
 Rules: `src/` never imports from here; the scripts here import from `src/` so they use the same data loading,
-evaluation and model selection as the core. The two runs are comparable.
+evaluation and model selection as the core. The two runs are comparable, and the core and its tests never need torch.
 
 ## Run
 
 ```bash
-python -m venv .venv-beyond && .venv-beyond/bin/pip install -r beyond_scope/requirements.txt
-PYTHONPATH=src:. .venv-beyond/bin/python beyond_scope/knee_cnn_embeddings.py --data data/knee --threads 4
-PYTHONPATH=src:. .venv-beyond/bin/python beyond_scope/text_sentence_embeddings.py unsupervised_learning/Student_Dataset.csv
+python -m venv .venv-deep && .venv-deep/bin/pip install -r requirements-deep.txt
+PYTHONPATH=src:. .venv-deep/bin/python experiments/deep_embeddings/knee_cnn_embeddings.py --data data/knee --threads 4
+PYTHONPATH=src:. .venv-deep/bin/python experiments/deep_embeddings/text_sentence_embeddings.py data/testimonies.csv
 ```
 
-Outputs go to `results/beyond_scope/{knee,text}/` (metrics, comparison, figures). Embeddings are cached as `.npy`
-under `runs/beyond_cache/`, which is git-ignored. Model weights, embeddings and testimony text are not versioned.
+Outputs go to `results/deep_embeddings/{knee,text}/` (metrics, comparison, figures). Embeddings are cached as `.npy`
+under `runs/deep_cache/`, which is git-ignored. Model weights, embeddings and testimony text are not versioned.
 
 ## Knee X-rays: frozen ImageNet CNN + scikit-learn head
 
@@ -56,7 +55,7 @@ stores the support vectors.
 
 Fine-tuning was **not run**: a forward pass alone over the training set took 20 min for ResNet-50 on this CPU. One
 epoch of training the last block would add a backward pass on top of that, and several epochs are needed, which is
-beyond the 1 h budget. Without a GPU, fine-tuning is not practical here.
+more than the 1 h budget. Without a GPU, fine-tuning is not practical here.
 
 ## Testimonies: sentence embeddings instead of TF-IDF + SVD
 
@@ -84,8 +83,7 @@ general) that the core's 18 clusters split finer (NMI 0.51). The partitions agre
 
 - **Knees**: frozen ImageNet features did **worse** than the hand-written HOG on every test metric (ROC-AUC 0.835 vs
   0.861, specificity 0.665 vs 0.700 at similar recall). Natural-image features do not transfer well to the narrow
-  joint-space cues of KL grading without fine-tuning, and fine-tuning needs a GPU. In the frozen setup, dropping the
-  library restriction brought no measured gain.
+  joint-space cues of KL grading without fine-tuning, and fine-tuning needs a GPU. In the frozen setup, the deep stack brought no measured gain.
 - **Text**: sentence embeddings give coarser, cleaner-looking themes and a higher silhouette in their own space, for
   an 87 to 449 MB download and about 6 to 11 times the run time (encode + selection: 37 s and 76 s vs 6.6 s). Whether they are "better" cannot be decided without labels;
   for exploration, the core's TF-IDF terms are more transparent.

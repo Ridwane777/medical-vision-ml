@@ -1,12 +1,11 @@
-# Data card: patient testimonies (`Student_Dataset.csv`)
+# Data card: patient testimonies (`data/testimonies.csv`)
 
 Short datasheet after Gebru et al., "Datasheets for Datasets" (2021).
 
 ## Source and terms
 
-- Provided by the school for the course project. Its original author and license are not stated, so it is **not
-  redistributed**: the file is git-ignored (`**/Student_Dataset*.csv`) and must be placed at
-  `unsupervised_learning/Student_Dataset.csv`.
+- The CSV is not in the repository (it is git-ignored) because we have neither its license nor permission to
+  redistribute it. Place a local copy at `data/testimonies.csv` (see [data/README.md](../../data/README.md)).
 
 ## Privacy
 
@@ -17,8 +16,8 @@ Short datasheet after Gebru et al., "Datasheets for Datasets" (2021).
 
 ## Composition
 
-Numbers from the clustering run of 2026-11-10 (`runs/<timestamp>/metrics.json`, also in the
-[unsupervised README](../../unsupervised_learning/README.md)):
+Numbers from the clustering run of 2026-11-10 (`runs/<timestamp>/metrics.json`, also shown in
+[`notebooks/02_testimony_clustering.ipynb`](../../notebooks/02_testimony_clustering.ipynb)):
 
 - 1,011 rows, UTF-8 with BOM, comma separated, no header. Columns: `ID`, `Code`, free English text.
 - `Code` is **constant** (`0x000000` or empty): there are **no labels**, so only internal metrics can be computed.
@@ -33,5 +32,6 @@ English stop words). TF-IDF (1,271 terms, `min_df=2`, `max_df=0.8`) then Truncat
 
 - No ground truth: cluster quality can only be judged by silhouette (0.125 for the chosen K-Means, k = 18) and by
   reading the top terms.
-- Short, overlapping texts; synonyms are not linked (no stemming or embeddings under the library constraint).
+- Short, overlapping texts; synonyms are not linked (no stemming or embeddings in the lightweight core; see the
+  [deep embeddings comparison](../../experiments/deep_embeddings/README.md)).
 - Collection process, population and consent are unknown.

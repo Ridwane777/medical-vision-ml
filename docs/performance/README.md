@@ -1,10 +1,10 @@
 # Performance
 
-Measured run times and memory. Sources: [`results/supervised/train.log`](../../results/supervised/train.log),
-[`metrics.json`](../../results/supervised/metrics.json) (`timings`, `environment`) and
-[`comparison.md`](../../results/supervised/comparison.md) (`search_seconds`).
+Measured run times and memory. Sources: [`results/knee/train.log`](../../results/knee/train.log),
+[`metrics.json`](../../results/knee/metrics.json) (`timings`, `environment`) and
+[`comparison.md`](../../results/knee/comparison.md) (`search_seconds`).
 
-## Supervised: full knee run (2026-11-11)
+## Knee classifier: full run (2026-11-11)
 
 **Environment**: shared 8-core CPU server (VPS), no GPU, `--n-jobs 4`; Linux 6.8.0 x86_64, Python 3.12.3,
 scikit-learn 1.9.1, NumPy 2.5.4. Configuration [`configs/full.json`](../../configs/full.json), 112 px, all images.
@@ -36,13 +36,13 @@ instead of a kernel over the support vectors (test prediction of the SVC: 48.7 s
 79.2 MB at 112 px float32. HOG features add about 6,084 x 7,374 x 4 bytes = 0.18 GB (estimate). The peak with four
 workers was not recorded; the README estimates a few GB, and 16 GB of RAM for 224 px.
 
-## Unsupervised: testimony clustering
+## Testimony clustering
 
 Measured on 2026-11-11 with `/usr/bin/time -v` on a laptop (Intel Core i7-1355U, 12 threads, 14 GB RAM, Python
 3.14.4, scikit-learn 1.9.1):
 
 ```bash
-PYTHONPATH=src python -m textclust unsupervised_learning/Student_Dataset.csv --output <dir> --quiet
+PYTHONPATH=src python -m textclust data/testimonies.csv --output <dir> --quiet
 ```
 
 | Measure | Value |

@@ -1,20 +1,15 @@
-venv
-# Datasets (not distributed)
-supervised_learning/Dataset_Knee_Osteoarthritis/
-**/Dataset_Knee_Osteoarthritis*/
-nohup.out
-supervised_learning/Dataset_Knee_Osteoarthritis_Balanced/
-legacy/dataset_pneumonia/
-dataset_pneumonia/
-**/Student_Dataset*.csv
-Student_Dataset*.csv
-*.pkl
-venv/
+# Data (not distributed): see data/README.md
+data/*
+!data/README.md
 
-# Run outputs (textclust and kneeclf): metrics, plots, models
+# Run outputs (textclust, kneeclf, experiments): metrics, plots, models, testimony text
 runs/
-__pycache__/
 results/**/model.pkl
-
-# beyond_scope caches (embeddings, weights)
 *.npy
+
+# Python / Jupyter
+__pycache__/
+.ipynb_checkpoints/
+venv/
+.venv*/
+nohup.out

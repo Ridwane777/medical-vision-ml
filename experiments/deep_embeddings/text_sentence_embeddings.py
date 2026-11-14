@@ -1,11 +1,11 @@
-"""Beyond the specification: sentence embeddings instead of TF-IDF + SVD for testimony clustering.
+"""Classical vs. deep embeddings: sentence embeddings instead of TF-IDF + SVD for testimony clustering.
 
-Uses sentence-transformers (forbidden by the project specification), so this lives outside src/.
+Uses sentence-transformers, which the lightweight core deliberately avoids, so this lives outside src/.
 Same rows as the core (src/textclust io + clean), same automatic k / KMeans-vs-HDBSCAN selection
 (src/textclust/model.py). Writes only aggregates: no testimony text, no embeddings.
 
 Run from the repository root:
-    PYTHONPATH=src:. python beyond_scope/text_sentence_embeddings.py unsupervised_learning/Student_Dataset.csv
+    PYTHONPATH=src:. python experiments/deep_embeddings/text_sentence_embeddings.py data/testimonies.csv
 """
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ import torch
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from textclust import clean, features, io, model, report  # noqa: E402
 
-log = logging.getLogger("beyond.text")
+log = logging.getLogger("deep.text")
 MODELS = ("sentence-transformers/all-MiniLM-L6-v2",
           "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
@@ -48,7 +48,7 @@ def summarize(choice, labels_core=None):
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("csv")
-    p.add_argument("--out", default="results/beyond_scope/text")
+    p.add_argument("--out", default="results/deep_embeddings/text")
     p.add_argument("--threads", type=int, default=4)
     a = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
